@@ -1,4 +1,6 @@
 // core/shared/widgets/drawer/theme_switch_tile.dart
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';

@@ -1,3 +1,4 @@
+// features/flow/widgets/trend_chart_section.dart
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/shared/widgets/card_container.dart';
@@ -18,7 +19,8 @@ class TrendChartSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return CardContainer(
       child: Column(
@@ -27,20 +29,38 @@ class TrendChartSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Spending Trends', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                'Spending Trends',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.1),
+                  color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(8),
+                  border: isDark ? Border.all(
+                    color: primaryColor.withValues(alpha: 0.3),
+                    width: 0.5,
+                  ) : null,
                 ),
                 child: Row(
                   children: [
-                    Icon(LucideIcons.lineChart, size: 16, color: primaryColor),
+                    Icon(
+                      LucideIcons.lineChart,
+                      size: 16,
+                      color: isDark ? Colors.white : primaryColor,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Interactive Chart',
-                      style: TextStyle(color: primaryColor, fontSize: 12),
+                      style: TextStyle(
+                        color: isDark ? Colors.white : primaryColor,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -59,7 +79,7 @@ class TrendChartSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const ChartLegend(label: 'Income', color: Colors.green),
+              ChartLegend(label: 'Income', color: Colors.green),
               const SizedBox(width: 24),
               ChartLegend(label: 'Expenses', color: primaryColor),
             ],

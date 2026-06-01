@@ -1,10 +1,11 @@
 // features/flow/flow_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'widgets/flow_app_bars.dart';
-import '../../presentation/cubits/auth_cubits/auth_cubit.dart';
+import '../../core/shared/widgets/app_bars.dart';
 import '../../presentation/cubits/expense_cubits/expense_cubit.dart';
 import '../../presentation/cubits/income_cubit/income_cubit.dart';
+import '../../data/models/expense_model.dart';
+import '../../data/models/income_model.dart';
 import 'widgets/monthly_breakdown.dart';
 import 'widgets/movement_indicators.dart';
 import 'widgets/net_flow_card.dart';
@@ -21,8 +22,8 @@ class FlowScreen extends StatefulWidget {
 class _FlowScreenState extends State<FlowScreen> {
   String selectedPeriod = 'Weekly';
 
-  // Sample trend data (still hardcoded for demo)
-  final List<Map<String, dynamic>> chartData = const [
+  // Chart data stays hardcoded — it's the visual demo data for the trend chart.
+  final List<Map<String, dynamic>> weeklyChartData = const [
     {'day': 'Mon', 'value': 120},
     {'day': 'Tue', 'value': 85},
     {'day': 'Wed', 'value': 145},
@@ -32,7 +33,7 @@ class _FlowScreenState extends State<FlowScreen> {
     {'day': 'Sun', 'value': 95},
   ];
 
-  final List<Map<String, dynamic>> monthlyData = const [
+  final List<Map<String, dynamic>> monthlyChartData = const [
     {'month': 'Jan', 'value': 3200},
     {'month': 'Feb', 'value': 2950},
     {'month': 'Mar', 'value': 3100},
@@ -41,28 +42,64 @@ class _FlowScreenState extends State<FlowScreen> {
     {'month': 'Jun', 'value': 3350},
   ];
 
+  /// Return a [DateTimeRange] matching the selected period chip.
+  DateTimeRange get _selectedRange {
+    final now = DateTime.now();
+    switch (selectedPeriod) {
+      case 'Weekly':
+      // Start of this week (Monday).
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        return DateTimeRange(
+          start: DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day),
+          end: DateTime(now.year, now.month, now.day, 23, 59, 59),
+        );
+      case 'Monthly':
+        return DateTimeRange(
+          start: DateTime(now.year, now.month, 1),
+          end: DateTime(now.year, now.month + 1, 0, 23, 59, 59),
+        );
+      case 'Yearly':
+        return DateTimeRange(
+          start: DateTime(now.year, 1, 1),
+          end: DateTime(now.year, 12, 31, 23, 59, 59),
+        );
+      default:
+        return DateTimeRange(
+          start: DateTime(now.year, now.month, 1),
+          end: DateTime(now.year, now.month + 1, 0, 23, 59, 59),
+        );
+    }
+  }
+
+  List<ExpenseModel> _filterExpenses(List<ExpenseModel> all) {
+    final range = _selectedRange;
+    return all.where((e) =>
+    !e.date.isBefore(range.start) && !e.date.isAfter(range.end),
+    ).toList();
+  }
+
+  List<IncomeModel> _filterIncome(List<IncomeModel> all) {
+    final range = _selectedRange;
+    return all.where((i) =>
+    !i.date.isBefore(range.start) && !i.date.isAfter(range.end),
+    ).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final authState = context.watch<AuthCubit>().state;
-    final userId = authState is AuthAuthenticated ? authState.user.id : '';
-
-    // Fetch real data
-    if (userId.isNotEmpty) {
-      context.read<ExpenseCubit>().getExpenses(userId);
-      context.read<IncomeCubit>().getIncome(userId);
-    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: const FlowAppBar(),
       body: CustomScrollView(
         slivers: [
+          // Period chip selector
           SliverAppBar(
             expandedHeight: 100,
             floating: true,
             backgroundColor: theme.scaffoldBackgroundColor,
-            title: const Text('Cash Flow'),
+            automaticallyImplyLeading: false,
             flexibleSpace: FlexibleSpaceBar(
               background: Padding(
                 padding: const EdgeInsets.only(top: 60, left: 16, right: 16),
@@ -96,31 +133,38 @@ class _FlowScreenState extends State<FlowScreen> {
               ),
             ),
           ),
+
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // Net Flow Card with real data
+
+                // Net Flow Card — filtered to selected period
                 BlocBuilder<ExpenseCubit, ExpenseState>(
                   builder: (context, expenseState) {
-                    final totalExpenses = expenseState is ExpenseLoaded
-                        ? expenseState.totalExpenses
-                        : 0.0;
-
                     return BlocBuilder<IncomeCubit, IncomeState>(
                       builder: (context, incomeState) {
-                        final totalIncome = incomeState is IncomeLoaded
-                            ? incomeState.totalIncome
-                            : 0.0;
+                        final filteredExpenses = expenseState is ExpenseLoaded
+                            ? _filterExpenses(expenseState.expenses)
+                            : <ExpenseModel>[];
+                        final filteredIncome = incomeState is IncomeLoaded
+                            ? _filterIncome(incomeState.income)
+                            : <IncomeModel>[];
 
+                        final totalExpenses =
+                        filteredExpenses.fold(0.0, (sum, e) => sum + e.amount);
+                        final totalIncome =
+                        filteredIncome.fold(0.0, (sum, i) => sum + i.amount);
                         final netFlow = totalIncome - totalExpenses;
-                        final percentageChange = netFlow != 0
-                            ? (netFlow / (netFlow.abs() + 1000)) * 100
+
+                        // Simple percentage: net vs total inflow.
+                        final percentageChange = totalIncome > 0
+                            ? (netFlow / totalIncome * 100).abs()
                             : 0.0;
 
                         return NetFlowCard(
                           netFlow: netFlow,
-                          percentageChange: percentageChange.abs(),
+                          percentageChange: percentageChange,
                           isPositive: netFlow >= 0,
                         );
                       },
@@ -129,33 +173,41 @@ class _FlowScreenState extends State<FlowScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Trend Chart
+                // Trend Chart (visual demo data — period label passed for axis labels)
                 TrendChartSection(
-                  data: selectedPeriod == 'Weekly' ? chartData : monthlyData,
+                  data: selectedPeriod == 'Weekly'
+                      ? weeklyChartData
+                      : monthlyChartData,
                   selectedPeriod: selectedPeriod,
                   primaryColor: theme.primaryColor,
                 ),
                 const SizedBox(height: 24),
 
-                // Movement Indicators with real data
+                // Movement Indicators — filtered to selected period
                 BlocBuilder<ExpenseCubit, ExpenseState>(
                   builder: (context, expenseState) {
-                    final totalExpenses = expenseState is ExpenseLoaded
-                        ? expenseState.totalExpenses
-                        : 0.0;
-
                     return BlocBuilder<IncomeCubit, IncomeState>(
                       builder: (context, incomeState) {
-                        final totalIncome = incomeState is IncomeLoaded
-                            ? incomeState.totalIncome
-                            : 0.0;
+                        final filteredExpenses = expenseState is ExpenseLoaded
+                            ? _filterExpenses(expenseState.expenses)
+                            : <ExpenseModel>[];
+                        final filteredIncome = incomeState is IncomeLoaded
+                            ? _filterIncome(incomeState.income)
+                            : <IncomeModel>[];
+
+                        final totalExpenses =
+                        filteredExpenses.fold(0.0, (sum, e) => sum + e.amount);
+                        final totalIncome =
+                        filteredIncome.fold(0.0, (sum, i) => sum + i.amount);
 
                         return MovementIndicators(
                           primaryColor: theme.primaryColor,
                           totalIncome: totalIncome,
                           totalExpenses: totalExpenses,
-                          incomeChange: totalIncome != 0 ? 18.3 : 0.0,
-                          expenseChange: totalExpenses != 0 ? 5.2 : 0.0,
+                          // Change percentages are placeholder until you have
+                          // previous-period data to compare against.
+                          incomeChange: totalIncome > 0 ? 18.3 : 0.0,
+                          expenseChange: totalExpenses > 0 ? 5.2 : 0.0,
                         );
                       },
                     );
@@ -163,9 +215,30 @@ class _FlowScreenState extends State<FlowScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Monthly Breakdown (still sample data for now)
-                MonthlyBreakdown(theme: theme),
-                const SizedBox(height: 16),
+                // Monthly Breakdown — real data grouped by calendar month
+                BlocBuilder<ExpenseCubit, ExpenseState>(
+                  builder: (context, expenseState) {
+                    return BlocBuilder<IncomeCubit, IncomeState>(
+                      builder: (context, incomeState) {
+                        final expenses = expenseState is ExpenseLoaded
+                            ? expenseState.expenses
+                            : <ExpenseModel>[];
+                        final income = incomeState is IncomeLoaded
+                            ? incomeState.income
+                            : <IncomeModel>[];
+
+                        return MonthlyBreakdown(
+                          theme: theme,
+                          expenses: expenses,
+                          income: income,
+                        );
+                      },
+                    );
+                  },
+                ),
+
+                // Bottom padding so last item clears the FAB.
+                const SizedBox(height: 100),
               ]),
             ),
           ),

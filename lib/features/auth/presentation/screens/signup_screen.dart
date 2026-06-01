@@ -6,10 +6,7 @@ import '../../../../presentation/cubits/auth_cubits/auth_cubit.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/auth_header.dart';
 import '../widgets/auth_text_field.dart';
-import '../widgets/back_button.dart';
 import '../widgets/loading_overlay.dart';
-import '../widgets/or_divider.dart';
-import '../widgets/social_login_button.dart';
 import '../widgets/terms_checkbox.dart';
 import 'login_screen.dart';
 
@@ -75,8 +72,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const CustomBackButton(),
-                        const SizedBox(height: 24),
+
                         const AuthHeader(
                           title: 'Create Account',
                           subtitle: 'Sign up to start tracking your expenses',
@@ -154,16 +150,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           },
                           isLoading: isLoading,
                         ),
-                        const SizedBox(height: 24),
-                        const OrDivider(),
-                        const SizedBox(height: 24),
-                        Row(
-                          children: const [
-                            SocialLoginButton(icon: Icons.webhook, label: 'Google'),
-                            SizedBox(width: 16),
-                            SocialLoginButton(icon: Icons.apple, label: 'Apple'),
-                          ],
-                        ),
+
                         const SizedBox(height: 32),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,

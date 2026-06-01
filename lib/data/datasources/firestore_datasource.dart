@@ -1,4 +1,6 @@
 // data/datasources/firestore_datasource.dart
+// ignore_for_file: avoid_types_as_parameter_names
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../models/expense_model.dart';
@@ -27,7 +29,6 @@ class FirestoreDataSource {
     }
   }
 
-  // Real-time user stream
   Stream<UserModel?> streamUser(String userId) {
     return _firestore
         .collection('users')
@@ -41,12 +42,71 @@ class FirestoreDataSource {
     });
   }
 
-  // Update user balance
   Future<void> updateUserBalance(String userId, double newBalance) async {
     await _firestore.collection('users').doc(userId).update({
       'totalBalance': newBalance,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  Future<void> updateUserFullName(String userId, String fullName) async {
+    await _firestore.collection('users').doc(userId).update({
+      'fullName': fullName,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Deletes the user document, all their expenses, all their income,
+  /// and all their notifications in Firestore.
+  /// Call this BEFORE deleting the Firebase Auth account so the user
+  /// is still authenticated for the Firestore security rules.
+  Future<void> deleteAllUserData(String userId) async {
+    // Firestore batch limit is 500 ops. For most users this is fine.
+    // If you expect >400 transactions, paginate the deletes.
+    final batch = _firestore.batch();
+
+    // 1. User document
+    batch.delete(_firestore.collection('users').doc(userId));
+
+    // 2. Expenses
+    final expenses = await _firestore
+        .collection('expenses')
+        .where('userId', isEqualTo: userId)
+        .get();
+    for (final doc in expenses.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 3. Income
+    final income = await _firestore
+        .collection('income')
+        .where('userId', isEqualTo: userId)
+        .get();
+    for (final doc in income.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 4. Notifications subcollection
+    final notifications = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .get();
+    for (final doc in notifications.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 5. Settings subcollection
+    final settings = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('settings')
+        .get();
+    for (final doc in settings.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
   }
 
   // ============ EXPENSES ============
@@ -56,26 +116,20 @@ class FirestoreDataSource {
     await docRef.set(expenseWithId.toFirestore());
   }
 
-  // Batch add multiple expenses
   Future<void> addMultipleExpenses(List<ExpenseModel> expenses) async {
     final batch = _firestore.batch();
-
     for (final expense in expenses) {
       final docRef = _firestore.collection('expenses').doc();
       final expenseWithId = expense.copyWith(id: docRef.id);
       batch.set(docRef, expenseWithId.toFirestore());
     }
-
     await batch.commit();
   }
 
-  // Real-time expenses stream with query (FIXED - removed orderBy)
   Stream<List<ExpenseModel>> getExpenses(String userId, {int? limit}) {
     var query = _firestore
         .collection('expenses')
         .where('userId', isEqualTo: userId);
-
-    // REMOVED .orderBy('date', descending: true) to avoid index requirement
 
     if (limit != null) {
       query = query.limit(limit);
@@ -85,13 +139,11 @@ class FirestoreDataSource {
       final expenses = snapshot.docs
           .map((doc) => ExpenseModel.fromFirestore(doc, null))
           .toList();
-      // Sort in memory instead
       expenses.sort((a, b) => b.date.compareTo(a.date));
       return expenses;
     });
   }
 
-  // Get expenses by date range
   Stream<List<ExpenseModel>> getExpensesByDateRange(
       String userId,
       DateTime startDate,
@@ -104,14 +156,11 @@ class FirestoreDataSource {
         .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => ExpenseModel.fromFirestore(doc, null))
-          .toList();
-    });
+        .map((snapshot) => snapshot.docs
+        .map((doc) => ExpenseModel.fromFirestore(doc, null))
+        .toList());
   }
 
-  // Get expenses by category
   Stream<List<ExpenseModel>> getExpensesByCategory(
       String userId,
       String category,
@@ -122,14 +171,11 @@ class FirestoreDataSource {
         .where('category', isEqualTo: category)
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => ExpenseModel.fromFirestore(doc, null))
-          .toList();
-    });
+        .map((snapshot) => snapshot.docs
+        .map((doc) => ExpenseModel.fromFirestore(doc, null))
+        .toList());
   }
 
-  // Update expense
   Future<void> updateExpense(ExpenseModel expense) async {
     await _firestore
         .collection('expenses')
@@ -141,14 +187,11 @@ class FirestoreDataSource {
     await _firestore.collection('expenses').doc(expenseId).delete();
   }
 
-  // Delete multiple expenses (batch)
   Future<void> deleteMultipleExpenses(List<String> expenseIds) async {
     final batch = _firestore.batch();
-
     for (final id in expenseIds) {
       batch.delete(_firestore.collection('expenses').doc(id));
     }
-
     await batch.commit();
   }
 
@@ -159,25 +202,20 @@ class FirestoreDataSource {
     await docRef.set(incomeWithId.toFirestore());
   }
 
-  // Real-time income stream (FIXED - removed orderBy)
   Stream<List<IncomeModel>> getIncome(String userId) {
-    var query = _firestore
+    return _firestore
         .collection('income')
-        .where('userId', isEqualTo: userId);
-
-    // REMOVED .orderBy('date', descending: true) to avoid index requirement
-
-    return query.snapshots().map((snapshot) {
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
       final income = snapshot.docs
           .map((doc) => IncomeModel.fromFirestore(doc, null))
           .toList();
-      // Sort in memory instead
       income.sort((a, b) => b.date.compareTo(a.date));
       return income;
     });
   }
 
-  // Get income by date range
   Stream<List<IncomeModel>> getIncomeByDateRange(
       String userId,
       DateTime startDate,
@@ -190,11 +228,9 @@ class FirestoreDataSource {
         .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => IncomeModel.fromFirestore(doc, null))
-          .toList();
-    });
+        .map((snapshot) => snapshot.docs
+        .map((doc) => IncomeModel.fromFirestore(doc, null))
+        .toList());
   }
 
   Future<void> updateIncome(IncomeModel income) async {
@@ -208,20 +244,16 @@ class FirestoreDataSource {
     await _firestore.collection('income').doc(incomeId).delete();
   }
 
-  // ============ AGGREGATION (For totals) ============
+  // ============ AGGREGATION ============
   Future<double> getTotalExpenses(String userId) async {
     final snapshot = await _firestore
         .collection('expenses')
         .where('userId', isEqualTo: userId)
         .get();
-
-    double total = 0.0;
-    for (final doc in snapshot.docs) {
-      final data = doc.data();
-      final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
-      total = total + amount;
-    }
-    return total;
+    return snapshot.docs.fold<double>(0.0, (sum, doc) {
+      final amount = (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;
+      return sum + amount;
+    });
   }
 
   Future<double> getTotalIncome(String userId) async {
@@ -229,40 +261,8 @@ class FirestoreDataSource {
         .collection('income')
         .where('userId', isEqualTo: userId)
         .get();
-
-    double total = 0.0;
-    for (final doc in snapshot.docs) {
-      final data = doc.data();
-      final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
-      total = total + amount;
-    }
-    return total;
-  }
-
-  // Alternative using fold (with proper typing)
-  Future<double> getTotalExpensesFold(String userId) async {
-    final snapshot = await _firestore
-        .collection('expenses')
-        .where('userId', isEqualTo: userId)
-        .get();
-
-    return snapshot.docs.fold<double>(0.0, (double sum, doc) {
-      final data = doc.data();
-      final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
-      return sum + amount;
-    });
-  }
-
-  // Alternative for income using fold
-  Future<double> getTotalIncomeFold(String userId) async {
-    final snapshot = await _firestore
-        .collection('income')
-        .where('userId', isEqualTo: userId)
-        .get();
-
-    return snapshot.docs.fold<double>(0.0, (double sum, doc) {
-      final data = doc.data();
-      final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
+    return snapshot.docs.fold<double>(0.0, (sum, doc) {
+      final amount = (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;
       return sum + amount;
     });
   }

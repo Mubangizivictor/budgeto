@@ -53,10 +53,22 @@ class _ExpenseModalState extends State<ExpenseModal> {
 
   String _getUserId(BuildContext context) {
     final authState = context.read<AuthCubit>().state;
-    if (authState is AuthAuthenticated) {
-      return authState.user.id;
-    }
-    return '';
+    return authState is AuthAuthenticated ? authState.user.id : '';
+  }
+
+  /// Current balance = total income - total expenses (from cubit states).
+  double _getCurrentBalance(BuildContext context) {
+    final expenseState = widget.expenseCubit.state;
+    final incomeState = widget.incomeCubit.state;
+
+    final totalExpenses =
+    expenseState is ExpenseLoaded ? expenseState.totalExpenses : 0.0;
+    final totalIncome =
+    incomeState is IncomeLoaded ? incomeState.totalIncome : 0.0;
+
+    final newAmount = double.tryParse(amountController.text) ?? 0.0;
+    // Balance after this expense is applied.
+    return totalIncome - totalExpenses - newAmount;
   }
 
   @override
@@ -94,17 +106,20 @@ class _ExpenseModalState extends State<ExpenseModal> {
                   CategoryGrid(
                     categories: categories,
                     selectedCategory: selectedCategory,
-                    onCategorySelected: (category) => setState(() => selectedCategory = category),
+                    onCategorySelected: (category) =>
+                        setState(() => selectedCategory = category),
                   ),
                   const SizedBox(height: 24),
                   PaymentMethodField(
                     selectedPaymentMethod: selectedPaymentMethod,
-                    onChanged: (value) => setState(() => selectedPaymentMethod = value!),
+                    onChanged: (value) =>
+                        setState(() => selectedPaymentMethod = value!),
                   ),
                   const SizedBox(height: 24),
                   DateField(
                     selectedDate: selectedDate,
-                    onDateSelected: (date) => setState(() => selectedDate = date),
+                    onDateSelected: (date) =>
+                        setState(() => selectedDate = date),
                     iconColor: theme.colorScheme.error,
                   ),
                   const SizedBox(height: 24),
@@ -150,10 +165,13 @@ class _ExpenseModalState extends State<ExpenseModal> {
                             if (userId.isNotEmpty) {
                               context.read<ExpenseCubit>().addExpense(
                                 userId: userId,
-                                amount: double.parse(amountController.text),
+                                amount: double.parse(
+                                    amountController.text),
                                 category: selectedCategory,
                                 note: noteController.text,
                                 date: selectedDate,
+                                currentBalance:
+                                _getCurrentBalance(context),
                               );
                             }
                           }

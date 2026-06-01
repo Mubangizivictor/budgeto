@@ -2,6 +2,8 @@
 import 'package:budgeto/presentation/cubits/auth_cubits/auth_cubit.dart';
 import 'package:budgeto/presentation/cubits/expense_cubits/expense_cubit.dart';
 import 'package:budgeto/presentation/cubits/income_cubit/income_cubit.dart';
+import 'package:budgeto/presentation/cubits/export_cubit/export_cubit.dart';
+import 'package:budgeto/presentation/cubits/notification_cubit/notification_cubit/notification_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -26,6 +28,8 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
   late final ExpenseCubit _expenseCubit;
   late final IncomeCubit _incomeCubit;
+  late final NotificationCubit _notificationCubit;
+  late final ExportCubit _exportCubit;
 
   final List<Widget> screens = const [
     HomeScreen(),
@@ -37,16 +41,15 @@ class _MainNavScreenState extends State<MainNavScreen> {
   @override
   void initState() {
     super.initState();
-    // Get the shared cubit instances from the service locator.
     _expenseCubit = sl<ExpenseCubit>();
     _incomeCubit = sl<IncomeCubit>();
+    _notificationCubit = sl<NotificationCubit>();
+    _exportCubit = sl<ExportCubit>();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Guard so this only runs once, not on every dependency change
-    // (theme toggle, navigation push/pop, etc.).
     if (!_dataLoaded) {
       _dataLoaded = true;
       _loadUserDataIfLoggedIn();
@@ -54,14 +57,13 @@ class _MainNavScreenState extends State<MainNavScreen> {
   }
 
   void _loadUserDataIfLoggedIn() {
-    // Read the AuthCubit provided by main.dart's MultiBlocProvider —
-    // the correct shared instance, not a new one from sl<>.
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthAuthenticated) {
       final userId = authState.user.id;
       if (userId.isNotEmpty) {
         _expenseCubit.getExpenses(userId);
         _incomeCubit.getIncome(userId);
+        _notificationCubit.init(userId);
       }
     }
   }
@@ -89,10 +91,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
     return MultiBlocProvider(
       providers: [
-        // AuthCubit is already provided by main.dart — pass it through.
         BlocProvider.value(value: context.read<AuthCubit>()),
         BlocProvider.value(value: _expenseCubit),
         BlocProvider.value(value: _incomeCubit),
+        BlocProvider.value(value: _notificationCubit),
+        BlocProvider.value(value: _exportCubit),
       ],
       child: Scaffold(
         extendBody: true,
@@ -101,9 +104,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
           index: selectedIndex,
           children: screens,
         ),
-        floatingActionButton: MainFab(
-          onPressed: _showTransactionTypeModal,
-        ),
+        floatingActionButton: MainFab(onPressed: _showTransactionTypeModal),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
@@ -146,63 +147,47 @@ class _MainNavScreenState extends State<MainNavScreen> {
                 onDestinationSelected: _onTabChanged,
                 destinations: [
                   NavigationDestination(
-                    icon: Icon(
-                      LucideIcons.layoutDashboard,
-                      size: 22,
-                      color: isDarkMode ? Colors.grey[400] : null,
-                    ),
-                    selectedIcon: Icon(
-                      LucideIcons.layoutDashboard,
-                      size: 24,
-                      color: isDarkMode
-                          ? Colors.white
-                          : theme.colorScheme.primary,
-                    ),
+                    icon: Icon(LucideIcons.layoutDashboard,
+                        size: 22,
+                        color: isDarkMode ? Colors.grey[400] : null),
+                    selectedIcon: Icon(LucideIcons.layoutDashboard,
+                        size: 24,
+                        color: isDarkMode
+                            ? Colors.white
+                            : theme.colorScheme.primary),
                     label: 'Home',
                   ),
                   NavigationDestination(
-                    icon: Icon(
-                      LucideIcons.trendingUp,
-                      size: 22,
-                      color: isDarkMode ? Colors.grey[400] : null,
-                    ),
-                    selectedIcon: Icon(
-                      LucideIcons.trendingUp,
-                      size: 24,
-                      color: isDarkMode
-                          ? Colors.white
-                          : theme.colorScheme.primary,
-                    ),
+                    icon: Icon(LucideIcons.trendingUp,
+                        size: 22,
+                        color: isDarkMode ? Colors.grey[400] : null),
+                    selectedIcon: Icon(LucideIcons.trendingUp,
+                        size: 24,
+                        color: isDarkMode
+                            ? Colors.white
+                            : theme.colorScheme.primary),
                     label: 'Flow',
                   ),
                   NavigationDestination(
-                    icon: Icon(
-                      LucideIcons.wallet,
-                      size: 22,
-                      color: isDarkMode ? Colors.grey[400] : null,
-                    ),
-                    selectedIcon: Icon(
-                      LucideIcons.wallet,
-                      size: 24,
-                      color: isDarkMode
-                          ? Colors.white
-                          : theme.colorScheme.primary,
-                    ),
+                    icon: Icon(LucideIcons.wallet,
+                        size: 22,
+                        color: isDarkMode ? Colors.grey[400] : null),
+                    selectedIcon: Icon(LucideIcons.wallet,
+                        size: 24,
+                        color: isDarkMode
+                            ? Colors.white
+                            : theme.colorScheme.primary),
                     label: 'Vault',
                   ),
                   NavigationDestination(
-                    icon: Icon(
-                      LucideIcons.sparkles,
-                      size: 22,
-                      color: isDarkMode ? Colors.grey[400] : null,
-                    ),
-                    selectedIcon: Icon(
-                      LucideIcons.sparkles,
-                      size: 24,
-                      color: isDarkMode
-                          ? Colors.white
-                          : theme.colorScheme.primary,
-                    ),
+                    icon: Icon(LucideIcons.sparkles,
+                        size: 22,
+                        color: isDarkMode ? Colors.grey[400] : null),
+                    selectedIcon: Icon(LucideIcons.sparkles,
+                        size: 24,
+                        color: isDarkMode
+                            ? Colors.white
+                            : theme.colorScheme.primary),
                     label: 'Insights',
                   ),
                 ],

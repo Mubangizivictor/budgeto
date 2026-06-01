@@ -1,4 +1,4 @@
-// core/shared/widgets/auth_text_field.dart
+// core/shared/widgets/auth/auth_text_field.dart
 import 'package:flutter/material.dart';
 
 class AuthTextField extends StatelessWidget {
@@ -9,6 +9,8 @@ class AuthTextField extends StatelessWidget {
   final bool obscureText;
   final Widget? suffixIcon;
   final TextInputType? keyboardType;
+  final bool enabled;
+  final String? Function(String?)? validator;
 
   const AuthTextField({
     super.key,
@@ -19,6 +21,8 @@ class AuthTextField extends StatelessWidget {
     this.obscureText = false,
     this.suffixIcon,
     this.keyboardType,
+    this.enabled = true,
+    this.validator,
   });
 
   @override
@@ -35,11 +39,13 @@ class AuthTextField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
+          enabled: enabled,
           style: theme.textTheme.bodyLarge,
+          validator: validator,
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: Icon(icon, size: 20),
@@ -49,8 +55,12 @@ class AuthTextField extends StatelessWidget {
               borderSide: BorderSide.none,
             ),
             filled: true,
-            fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            fillColor: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.3),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
           ),
         ),
       ],

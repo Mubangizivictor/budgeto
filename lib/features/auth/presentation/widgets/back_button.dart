@@ -1,4 +1,4 @@
-// core/shared/widgets/back_button.dart
+// core/shared/widgets/auth/back_button.dart
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 

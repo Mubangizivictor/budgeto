@@ -1,13 +1,14 @@
-// core/shared/widgets/drawer/my_drawer.dart
+// core/shared/widgets/drawer/my_drawer.dart (update the Help & Support tile)
 import 'package:budgeto/core/drawer/widgets/drawer_divider.dart';
 import 'package:budgeto/core/drawer/widgets/drawer_header.dart';
 import 'package:budgeto/core/drawer/widgets/drawer_tile.dart';
 import 'package:budgeto/core/drawer/widgets/logout_dialog.dart';
 import 'package:budgeto/core/drawer/widgets/theme_switch_tile.dart';
+import 'package:budgeto/features/profile/edit_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-
+import '../../features/support/help_support_screen.dart';
 
 class MyDrawer extends StatelessWidget {
   const MyDrawer({super.key});
@@ -31,97 +32,18 @@ class MyDrawer extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  // Home
-                  DrawerTile(
-                    icon: LucideIcons.home,
-                    title: 'Home',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to Home
-                    },
-                  ),
-
-                  // Flow (Cash Flow)
-                  DrawerTile(
-                    icon: LucideIcons.trendingUp,
-                    title: 'Cash Flow',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to Flow
-                    },
-                  ),
-
-                  // Vault (Transactions)
-                  DrawerTile(
-                    icon: LucideIcons.wallet,
-                    title: 'Vault',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to Vault
-                    },
-                  ),
-
-                  // Insights
-                  DrawerTile(
-                    icon: LucideIcons.sparkles,
-                    title: 'Insights',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to Insights
-                    },
-                  ),
-
-                  const DrawerDivider(),
-
-                  // Transaction History
-                  DrawerTile(
-                    icon: LucideIcons.history,
-                    title: 'Transaction History',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to Transaction History
-                    },
-                  ),
-
-                  // Categories
-                  DrawerTile(
-                    icon: LucideIcons.tags,
-                    title: 'Categories',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to Categories Management
-                    },
-                  ),
-
-                  // Budgets
-                  DrawerTile(
-                    icon: LucideIcons.target,
-                    title: 'Budgets',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to Budgets
-                    },
-                  ),
-
-                  const DrawerDivider(),
-
-                  // Settings
-                  DrawerTile(
-                    icon: LucideIcons.settings,
-                    title: 'Settings',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to Settings
-                    },
-                  ),
-
                   // Help & Support
                   DrawerTile(
                     icon: LucideIcons.helpCircle,
                     title: 'Help & Support',
                     onTap: () {
                       Navigator.pop(context);
-                      // TODO: Navigate to Help
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HelpSupportScreen(),
+                        ),
+                      );
                     },
                   ),
 

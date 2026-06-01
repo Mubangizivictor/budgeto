@@ -1,6 +1,8 @@
-// shared/widgets/flow_app_bars.dart
+// shared/widgets/app_bars.dart
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'export_button.dart';
+import 'notification_bell.dart';
 
 class FlowAppBar extends StatelessWidget implements PreferredSizeWidget {
   const FlowAppBar({super.key});
@@ -10,13 +12,14 @@ class FlowAppBar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
 
     return AppBar(
-      title: const Text('Cash Flow', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('Cash Flow',
+          style: TextStyle(fontWeight: FontWeight.bold)),
       centerTitle: false,
       backgroundColor: theme.scaffoldBackgroundColor,
       elevation: 0,
       actions: [
-        IconButton(icon: const Icon(LucideIcons.filter), onPressed: () {}),
-        IconButton(icon: const Icon(LucideIcons.download), onPressed: () {}),
+        const ExportButton(),
+        const NotificationBell(),
       ],
     );
   }
@@ -33,31 +36,16 @@ class VaultAppBar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
 
     return AppBar(
-      title: const Text('Vault', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('Vault',
+          style: TextStyle(fontWeight: FontWeight.bold)),
       centerTitle: false,
       backgroundColor: theme.scaffoldBackgroundColor,
       elevation: 0,
-      leading: IconButton(icon: const Icon(LucideIcons.menu), onPressed: () {}),
+      leading:
+      IconButton(icon: const Icon(LucideIcons.menu), onPressed: () {}),
       actions: [
-        IconButton(icon: const Icon(LucideIcons.search), onPressed: () {}),
-        Stack(
-          children: [
-            IconButton(icon: const Icon(LucideIcons.bell), onPressed: () {}),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: theme.scaffoldBackgroundColor, width: 1),
-                ),
-              ),
-            ),
-          ],
-        ),
+        const ExportButton(),
+        const NotificationBell(),
       ],
     );
   }
@@ -74,14 +62,16 @@ class InsightAppBar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
 
     return AppBar(
-      title: const Text('Smart Insights', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('Smart Insights',
+          style: TextStyle(fontWeight: FontWeight.bold)),
       centerTitle: false,
       backgroundColor: theme.scaffoldBackgroundColor,
       elevation: 0,
       actions: [
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: theme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
@@ -110,7 +100,8 @@ class InsightAppBar extends StatelessWidget implements PreferredSizeWidget {
             ],
           ),
         ),
-        IconButton(icon: const Icon(LucideIcons.refreshCw), onPressed: () {}),
+        const ExportButton(),
+        const NotificationBell(),
       ],
     );
   }

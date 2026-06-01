@@ -1,14 +1,20 @@
 // features/home/presentation/widgets/home_header.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/shared/widgets/greeting_name.dart';
-import '../../../../core/shared/widgets/profile_avatar.dart';
-import '../../../../presentation/cubits/auth_cubits/auth_cubit.dart';
-import 'period_dropdown.dart';
+import '../../../home/presentation/widgets/period_chip.dart';
 
+/// The period options available on the home screen.
+enum Period {
+  thisMonth('This month'),
+  lastMonth('Last month'),
+  thisYear('This year');
+
+  final String label;
+  const Period(this.label);
+}
+
+/// A row of pill chips that let the user switch the active period.
+/// Fires [onPeriodChanged] immediately on first build and on every tap.
 class HomeHeader extends StatefulWidget {
-  /// Called whenever the user picks a different period, and once on first
-  /// build with the default (this month) range.
   final ValueChanged<DateTimeRange> onPeriodChanged;
 
   const HomeHeader({
@@ -21,7 +27,7 @@ class HomeHeader extends StatefulWidget {
 }
 
 class _HomeHeaderState extends State<HomeHeader> {
-  Period _selectedPeriod = Period.thisMonth;
+  Period _selected = Period.thisMonth;
 
   static DateTimeRange _rangeFor(Period period) {
     final now = DateTime.now();
@@ -47,39 +53,33 @@ class _HomeHeaderState extends State<HomeHeader> {
   @override
   void initState() {
     super.initState();
-    // Fire the initial range after the first frame so the parent screen
-    // has finished building before receiving the callback.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) widget.onPeriodChanged(_rangeFor(_selectedPeriod));
+      if (mounted) widget.onPeriodChanged(_rangeFor(_selected));
     });
   }
 
-  void _onPeriodChanged(Period period) {
-    setState(() => _selectedPeriod = period);
+  void _onTap(Period period) {
+    if (_selected == period) return;
+    setState(() => _selected = period);
     widget.onPeriodChanged(_rangeFor(period));
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<AuthCubit>().state;
-    final userName =
-    authState is AuthAuthenticated ? authState.user.fullName : '';
-
     return Row(
-      children: [
-        GestureDetector( onTap: (){Scaffold.of(context).openDrawer();},
-          child: const ProfileAvatar(
-            imagePath: 'assets/images/my_profile_pic.jpeg',
+      children: Period.values.map((period) {
+        final isLast = period == Period.values.last;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: isLast ? 0 : 8),
+            child: PeriodChip(
+              label: period.label,
+              isSelected: _selected == period,
+              onTap: () => _onTap(period),
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
-        GreetingName(name: userName),
-        const Spacer(),
-        PeriodDropdown(
-          selectedPeriod: _selectedPeriod,
-          onChanged: _onPeriodChanged,
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 }

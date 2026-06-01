@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 class AuthDataSource {
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
 
-  // Sign up with email and password
   Future<firebase_auth.UserCredential> signUp({
     required String email,
     required String password,
@@ -15,7 +14,6 @@ class AuthDataSource {
     );
   }
 
-  // Sign in with email and password
   Future<firebase_auth.UserCredential> signIn({
     required String email,
     required String password,
@@ -26,22 +24,29 @@ class AuthDataSource {
     );
   }
 
-  // Sign out
+  Future<void> resetPassword(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
   Future<void> signOut() async {
     await _auth.signOut();
   }
 
-  // Get current user
+  /// Permanently deletes the Firebase Auth account.
+  /// Must be called AFTER Firestore data is deleted so the user is still
+  /// authenticated during the Firestore writes.
+  Future<void> deleteAccount() async {
+    await _auth.currentUser?.delete();
+  }
+
   firebase_auth.User? getCurrentUser() {
     return _auth.currentUser;
   }
 
-  // Check if user is logged in
   bool isLoggedIn() {
     return _auth.currentUser != null;
   }
 
-  // Get current user ID
   String? getCurrentUserId() {
     return _auth.currentUser?.uid;
   }

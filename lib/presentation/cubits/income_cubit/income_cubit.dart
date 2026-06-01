@@ -4,15 +4,20 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/models/income_model.dart';
 import '../../../data/repositories/transaction_repository.dart';
+import '../../../core/services/notification_service.dart';
 
 part 'income_state.dart';
 
 class IncomeCubit extends Cubit<IncomeState> {
   final TransactionRepository _transactionRepository;
+  final NotificationService _notificationService;
   StreamSubscription<List<IncomeModel>>? _incomeSubscription;
 
-  IncomeCubit({required TransactionRepository transactionRepository})
-      : _transactionRepository = transactionRepository,
+  IncomeCubit({
+    required TransactionRepository transactionRepository,
+    required NotificationService notificationService,
+  })  : _transactionRepository = transactionRepository,
+        _notificationService = notificationService,
         super(IncomeInitial());
 
   void getIncome(String userId) {
@@ -21,7 +26,6 @@ class IncomeCubit extends Cubit<IncomeState> {
       return;
     }
 
-    // Cancel any previous subscription before creating a new one.
     _incomeSubscription?.cancel();
     emit(IncomeLoading());
 
@@ -56,7 +60,21 @@ class IncomeCubit extends Cubit<IncomeState> {
         note: note,
         date: date,
       );
-      // No manual refresh needed — the live Firestore stream handles it.
+
+      final newIncome = IncomeModel(
+        id: '',
+        userId: userId,
+        amount: amount,
+        source: source,
+        note: note,
+        date: date,
+        createdAt: DateTime.now(),
+      );
+
+      await _notificationService.onIncomeAdded(
+        userId: userId,
+        income: newIncome,
+      );
     } catch (e) {
       if (!isClosed) emit(IncomeError(e.toString()));
     }
@@ -65,7 +83,6 @@ class IncomeCubit extends Cubit<IncomeState> {
   Future<void> deleteIncome(String incomeId, String userId) async {
     try {
       await _transactionRepository.deleteIncome(incomeId);
-      // No manual refresh needed — the live Firestore stream handles it.
     } catch (e) {
       if (!isClosed) emit(IncomeError(e.toString()));
     }

@@ -15,9 +15,19 @@ class TrendChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final maxValue = selectedPeriod == 'Weekly' ? 220 : 5000;
     final labelKey = selectedPeriod == 'Weekly' ? 'day' : 'month';
+
+    // Get a brighter version of primary color for dark mode
+    final barColor = isDark
+        ? theme.colorScheme.primary
+        : primaryColor;
+
+    final barLightColor = isDark
+        ? theme.colorScheme.primary.withValues(alpha: 0.6)
+        : primaryColor.withValues(alpha: 0.3);
 
     return SizedBox(
       height: 200,
@@ -40,8 +50,8 @@ class TrendChart extends StatelessWidget {
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
                       colors: [
-                        primaryColor,
-                        primaryColor.withValues(alpha: 0.4),
+                        barColor,
+                        barLightColor,
                       ],
                     ),
                     borderRadius: BorderRadius.circular(8),

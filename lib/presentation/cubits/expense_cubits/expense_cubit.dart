@@ -4,15 +4,20 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/models/expense_model.dart';
 import '../../../data/repositories/transaction_repository.dart';
+import '../../../core/services/notification_service.dart';
 
 part 'expense_state.dart';
 
 class ExpenseCubit extends Cubit<ExpenseState> {
   final TransactionRepository _transactionRepository;
+  final NotificationService _notificationService;
   StreamSubscription<List<ExpenseModel>>? _expensesSubscription;
 
-  ExpenseCubit({required TransactionRepository transactionRepository})
-      : _transactionRepository = transactionRepository,
+  ExpenseCubit({
+    required TransactionRepository transactionRepository,
+    required NotificationService notificationService,
+  })  : _transactionRepository = transactionRepository,
+        _notificationService = notificationService,
         super(ExpenseInitial());
 
   void getExpenses(String userId) {
@@ -21,8 +26,6 @@ class ExpenseCubit extends Cubit<ExpenseState> {
       return;
     }
 
-    // Cancel any previous subscription before creating a new one —
-    // prevents stacked listeners and duplicate state emissions.
     _expensesSubscription?.cancel();
     emit(ExpenseLoading());
 
@@ -48,6 +51,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     required String category,
     required String note,
     required DateTime date,
+    required double currentBalance,
   }) async {
     try {
       await _transactionRepository.addExpense(
@@ -57,8 +61,28 @@ class ExpenseCubit extends Cubit<ExpenseState> {
         note: note,
         date: date,
       );
-      // No manual refresh needed — the live Firestore stream emits the
-      // updated list automatically once the write lands.
+
+      // Trigger notifications after the write succeeds.
+      final currentExpenses = state is ExpenseLoaded
+          ? (state as ExpenseLoaded).expenses
+          : <ExpenseModel>[];
+
+      final newExpense = ExpenseModel(
+        id: '',
+        userId: userId,
+        amount: amount,
+        category: category,
+        note: note,
+        date: date,
+        createdAt: DateTime.now(),
+      );
+
+      await _notificationService.onExpenseAdded(
+        userId: userId,
+        expense: newExpense,
+        allExpenses: [...currentExpenses, newExpense],
+        currentBalance: currentBalance,
+      );
     } catch (e) {
       if (!isClosed) emit(ExpenseError(e.toString()));
     }

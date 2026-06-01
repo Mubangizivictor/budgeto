@@ -2,14 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/injection_container.dart';
+import '../forgot_password/widgets/forgot_password_screen.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/auth_header.dart';
 import '../widgets/auth_text_field.dart';
-import '../widgets/back_button.dart';
 import '../widgets/loading_overlay.dart';
-import '../widgets/or_divider.dart';
 import '../widgets/remember_me_checkbox.dart';
-import '../widgets/social_login_button.dart';
 import '../../../../main_nav_screen.dart';
 import '../../../../presentation/cubits/auth_cubits/auth_cubit.dart';
 import 'signup_screen.dart';
@@ -70,8 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const CustomBackButton(),
-                        const SizedBox(height: 24),
+
                         const AuthHeader(
                           title: 'Welcome Back!',
                           subtitle: 'Sign in to continue managing your finances',
@@ -107,8 +104,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               value: rememberMe,
                               onChanged: (value) => setState(() => rememberMe = value ?? false),
                             ),
+                            // In your LoginScreen, update the Forgot Password button:
+
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ForgotPasswordScreen(),
+                                  ),
+                                );
+                              },
                               child: Text(
                                 'Forgot Password?',
                                 style: TextStyle(
@@ -130,16 +136,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           isLoading: isLoading,
                         ),
-                        const SizedBox(height: 24),
-                        const OrDivider(),
-                        const SizedBox(height: 24),
-                        Row(
-                          children: const [
-                            SocialLoginButton(icon: Icons.webhook, label: 'Google'),
-                            SizedBox(width: 16),
-                            SocialLoginButton(icon: Icons.apple, label: 'Apple'),
-                          ],
-                        ),
+
+
                         const SizedBox(height: 32),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,

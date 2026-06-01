@@ -1,6 +1,5 @@
 // core/shared/widgets/drawer/drawer_tile.dart
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class DrawerTile extends StatelessWidget {
   final IconData icon;

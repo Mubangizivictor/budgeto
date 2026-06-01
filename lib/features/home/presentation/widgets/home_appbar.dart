@@ -1,11 +1,17 @@
-// home_appbar.dart
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+// features/home/presentation/widgets/home_appbar.dart
+// ignore_for_file: unnecessary_import
 
-import '../../../../core/shared/widgets/app_logo.dart';
-import '../../../../core/shared/widgets/custom_icon_button.dart';
-import '../../../../core/theme/theme_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../../core/shared/widgets/custom_icon_button.dart';
+import '../../../../core/shared/widgets/notification_bell.dart';
+import '../../../../core/shared/widgets/export_button.dart';
+import '../../../../core/shared/widgets/profile_avatar.dart';
+import '../../../../core/shared/widgets/greeting_name.dart';
+import '../../../../core/theme/theme_provider.dart';
+import '../../../../presentation/cubits/auth_cubits/auth_cubit.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   const HomeAppBar({super.key});
@@ -17,26 +23,37 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
+    final authState = context.watch<AuthCubit>().state;
+    final userName =
+    authState is AuthAuthenticated ? authState.user.fullName : '';
 
     return AppBar(
       elevation: 0,
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       automaticallyImplyLeading: false,
-      title: const AppLogo(),
+      title: Row(
+        children: [
+          ProfileAvatar(
+            size: 38,
+            iconSize: 20,
+            onTap: () => Scaffold.of(context).openDrawer(),
+          ),
+          const SizedBox(width: 10),
+          GreetingName(name: userName),
+        ],
+      ),
       actions: [
-        CustomIconButton(
-          icon: LucideIcons.search,
-          onTap: () {},
-        ),
-        const SizedBox(width: 10),
         CustomIconButton(
           icon: theme.brightness == Brightness.dark
               ? LucideIcons.moon
               : LucideIcons.sun,
           onTap: () => themeProvider.toggleTheme(),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 4),
+        const ExportButton(),
+        const NotificationBell(),
+        const SizedBox(width: 4),
       ],
     );
   }

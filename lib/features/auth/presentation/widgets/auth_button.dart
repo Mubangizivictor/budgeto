@@ -1,4 +1,4 @@
-// core/shared/widgets/auth_button.dart
+// core/shared/widgets/auth/auth_button.dart
 import 'package:flutter/material.dart';
 
 class AuthButton extends StatelessWidget {

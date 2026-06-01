@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../features/profile/edit_profile_screen.dart';
 import '../../../presentation/cubits/auth_cubits/auth_cubit.dart';
 
 class CustomDrawerHeader extends StatelessWidget {
@@ -25,7 +26,7 @@ class CustomDrawerHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Profile Avatar
+          // Static Profile Icon (no image)
           Container(
             width: 70,
             height: 70,
@@ -40,15 +41,10 @@ class CustomDrawerHeader extends StatelessWidget {
               ),
               shape: BoxShape.circle,
             ),
-            child: Center(
-              child: Text(
-                userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+            child: const Icon(
+              LucideIcons.user,
+              size: 40,
+              color: Colors.white,
             ),
           ),
           const SizedBox(width: 14),
@@ -78,7 +74,12 @@ class CustomDrawerHeader extends StatelessWidget {
                   height: 28,
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      // TODO: Navigate to Edit Profile
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EditProfileScreen(),
+                        ),
+                      );
                     },
                     icon: const Icon(LucideIcons.userPen, size: 14),
                     label: const Text('Edit Profile'),

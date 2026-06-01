@@ -23,6 +23,23 @@ class AuthAuthenticated extends AuthState {
 
 class AuthUnauthenticated extends AuthState {}
 
+class PasswordResetSent extends AuthState {}
+
+/// Emitted after [AuthCubit.updateProfile] succeeds.
+/// Distinct from [AuthAuthenticated] so screens can listen for a save
+/// event without triggering on every normal auth state change.
+class ProfileUpdated extends AuthState {
+  final User user;
+
+  const ProfileUpdated(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}
+
+/// Emitted after [AuthCubit.deleteAccount] succeeds.
+class AccountDeleted extends AuthState {}
+
 class AuthError extends AuthState {
   final String message;
 

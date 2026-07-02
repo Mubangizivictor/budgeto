@@ -12,7 +12,7 @@ abstract class TransactionRepository {
     required DateTime date,
   });
 
-  Stream<List<ExpenseModel>> getExpenses(String userId);
+  Stream<List<ExpenseModel>> getExpenses(String userId, {DateTime? startDate, DateTime? endDate});
 
   Future<void> deleteExpense(String expenseId);
 
@@ -27,7 +27,7 @@ abstract class TransactionRepository {
     required DateTime date,
   });
 
-  Stream<List<IncomeModel>> getIncome(String userId);
+  Stream<List<IncomeModel>> getIncome(String userId, {DateTime? startDate, DateTime? endDate});
 
   Future<void> deleteIncome(String incomeId);
 

@@ -39,7 +39,10 @@ Future<void> init() async {
 
   sl.registerFactory(() => NotificationCubit(repository: sl()));
 
-  sl.registerFactory(() => ExportCubit(exportService: sl()));
+  sl.registerFactory(() => ExportCubit(
+    exportService: sl(),
+    transactionRepository: sl(),
+  ));
 
   // ── Services ──────────────────────────────────────────────────────────────
   sl.registerLazySingleton(

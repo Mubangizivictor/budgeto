@@ -1,5 +1,6 @@
 // core/services/pdf_export_service.dart
 import 'dart:io';
+import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -16,7 +17,7 @@ class PdfExportService {
 
   // ── Public entry point ────────────────────────────────────────────────────
 
-  Future<void> exportAndShare(ExportRequest request) async {
+  Future<void> exportAndShare(ExportRequest request, {Rect? sharePositionOrigin}) async {
     final pdf = _buildPdf(request);
     final bytes = await pdf.save();
 
@@ -29,6 +30,7 @@ class PdfExportService {
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'application/pdf')],
       subject: 'Budgeto Report — ${_fileDateRange(request.startDate, request.endDate)}',
+      sharePositionOrigin: sharePositionOrigin,
     );
   }
 

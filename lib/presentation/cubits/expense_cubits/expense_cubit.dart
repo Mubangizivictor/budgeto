@@ -20,7 +20,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
         _notificationService = notificationService,
         super(ExpenseInitial());
 
-  void getExpenses(String userId) {
+  void getExpenses(String userId, {DateTime? startDate, DateTime? endDate}) {
     if (userId.isEmpty) {
       emit(ExpenseError('User ID is empty'));
       return;
@@ -30,7 +30,7 @@ class ExpenseCubit extends Cubit<ExpenseState> {
     emit(ExpenseLoading());
 
     _expensesSubscription = _transactionRepository
-        .getExpenses(userId)
+        .getExpenses(userId, startDate: startDate, endDate: endDate)
         .listen(
           (expenses) {
         if (!isClosed) {

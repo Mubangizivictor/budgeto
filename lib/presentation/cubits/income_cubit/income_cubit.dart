@@ -20,7 +20,7 @@ class IncomeCubit extends Cubit<IncomeState> {
         _notificationService = notificationService,
         super(IncomeInitial());
 
-  void getIncome(String userId) {
+  void getIncome(String userId, {DateTime? startDate, DateTime? endDate}) {
     if (userId.isEmpty) {
       emit(const IncomeError('User ID is empty'));
       return;
@@ -30,7 +30,7 @@ class IncomeCubit extends Cubit<IncomeState> {
     emit(IncomeLoading());
 
     _incomeSubscription = _transactionRepository
-        .getIncome(userId)
+        .getIncome(userId, startDate: startDate, endDate: endDate)
         .listen(
           (income) {
         if (!isClosed) {

@@ -1,10 +1,10 @@
 // core/shared/widgets/drawer/my_drawer.dart (update the Help & Support tile)
+import 'package:budgeto/core/constants/app_strings.dart';
 import 'package:budgeto/core/drawer/widgets/drawer_divider.dart';
 import 'package:budgeto/core/drawer/widgets/drawer_header.dart';
 import 'package:budgeto/core/drawer/widgets/drawer_tile.dart';
 import 'package:budgeto/core/drawer/widgets/logout_dialog.dart';
 import 'package:budgeto/core/drawer/widgets/theme_switch_tile.dart';
-import 'package:budgeto/features/profile/edit_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -35,7 +35,7 @@ class MyDrawer extends StatelessWidget {
                   // Help & Support
                   DrawerTile(
                     icon: LucideIcons.helpCircle,
-                    title: 'Help & Support',
+                    title: AppStrings.helpSupport,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -55,7 +55,7 @@ class MyDrawer extends StatelessWidget {
                   // Logout
                   DrawerTile(
                     icon: LucideIcons.logOut,
-                    title: 'Logout',
+                    title: AppStrings.logout,
                     isDestructive: true,
                     onTap: () => LogoutDialog.show(context),
                   ),
@@ -67,7 +67,7 @@ class MyDrawer extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Version 1.0.0',
+                '${AppStrings.version} 1.0.0',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark ? Colors.white38 : Colors.black38,
                 ),

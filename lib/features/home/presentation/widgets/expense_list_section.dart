@@ -1,5 +1,8 @@
 // features/home/presentation/widgets/expense_list_section.dart
+import 'package:budgeto/presentation/cubits/auth_cubits/auth_cubit.dart';
+import 'package:budgeto/presentation/cubits/expense_cubits/expense_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../data/models/expense_model.dart';
 
@@ -18,12 +21,21 @@ class ExpenseListSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Recent Transactions',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Recent Transactions',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              'Swipe to delete',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         if (expenses.isEmpty)
@@ -39,8 +51,40 @@ class ExpenseListSection extends StatelessWidget {
             ),
           )
         else
-          ...expenses.take(5).map((expense) => _buildTransactionItem(expense, theme)),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: expenses.length > 5 ? 5 : expenses.length,
+            itemBuilder: (context, index) {
+              final expense = expenses[index];
+              return _buildDismissibleItem(expense, theme, context);
+            },
+          ),
       ],
+    );
+  }
+
+  Widget _buildDismissibleItem(ExpenseModel expense, ThemeData theme, BuildContext context) {
+    return Dismissible(
+      key: Key(expense.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (direction) {
+        final authState = context.read<AuthCubit>().state;
+        if (authState is AuthAuthenticated) {
+          context.read<ExpenseCubit>().deleteExpense(expense.id, authState.user.id);
+        }
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(LucideIcons.trash2, color: Colors.white),
+      ),
+      child: _buildTransactionItem(expense, theme),
     );
   }
 

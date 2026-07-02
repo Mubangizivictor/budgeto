@@ -22,25 +22,58 @@ class FlowScreen extends StatefulWidget {
 class _FlowScreenState extends State<FlowScreen> {
   String selectedPeriod = 'Weekly';
 
-  // Chart data stays hardcoded — it's the visual demo data for the trend chart.
-  final List<Map<String, dynamic>> weeklyChartData = const [
-    {'day': 'Mon', 'value': 120},
-    {'day': 'Tue', 'value': 85},
-    {'day': 'Wed', 'value': 145},
-    {'day': 'Thu', 'value': 60},
-    {'day': 'Fri', 'value': 110},
-    {'day': 'Sat', 'value': 165},
-    {'day': 'Sun', 'value': 95},
+  static const _dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const _monthLabels = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
 
-  final List<Map<String, dynamic>> monthlyChartData = const [
-    {'month': 'Jan', 'value': 3200},
-    {'month': 'Feb', 'value': 2950},
-    {'month': 'Mar', 'value': 3100},
-    {'month': 'Apr', 'value': 3250},
-    {'month': 'May', 'value': 2980},
-    {'month': 'Jun', 'value': 3350},
-  ];
+  /// Real per-day expense totals for the current week (Mon–Sun).
+  List<Map<String, dynamic>> _weeklyChartData(List<ExpenseModel> allExpenses) {
+    final now = DateTime.now();
+    final startOfWeek = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+
+    return List.generate(7, (i) {
+      final day = startOfWeek.add(Duration(days: i));
+      final total = allExpenses
+          .where((e) =>
+      e.date.year == day.year &&
+          e.date.month == day.month &&
+          e.date.day == day.day)
+          .fold(0.0, (sum, e) => sum + e.amount);
+      return {'day': _dayLabels[i], 'value': total.round()};
+    });
+  }
+
+  /// Real monthly expense totals for the trailing 6 months.
+  List<Map<String, dynamic>> _monthlyChartData(List<ExpenseModel> allExpenses) {
+    final now = DateTime.now();
+    return List.generate(6, (i) {
+      final monthDate = DateTime(now.year, now.month - 5 + i, 1);
+      final total = allExpenses
+          .where((e) =>
+      e.date.year == monthDate.year && e.date.month == monthDate.month)
+          .fold(0.0, (sum, e) => sum + e.amount);
+      return {'month': _monthLabels[monthDate.month - 1], 'value': total.round()};
+    });
+  }
+
+  /// The equivalent period immediately before [_selectedRange], used to
+  /// compute real income/expense % change instead of a placeholder.
+  DateTimeRange get _previousRange {
+    final range = _selectedRange;
+    final duration = range.end.difference(range.start);
+    return DateTimeRange(
+      start: range.start.subtract(duration),
+      end: range.start.subtract(const Duration(seconds: 1)),
+    );
+  }
+
+  double _percentageChange(double current, double previous) {
+    if (previous <= 0) return 0.0;
+    return ((current - previous) / previous * 100);
+  }
 
   /// Return a [DateTimeRange] matching the selected period chip.
   DateTimeRange get _selectedRange {
@@ -173,41 +206,63 @@ class _FlowScreenState extends State<FlowScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Trend Chart (visual demo data — period label passed for axis labels)
-                TrendChartSection(
-                  data: selectedPeriod == 'Weekly'
-                      ? weeklyChartData
-                      : monthlyChartData,
-                  selectedPeriod: selectedPeriod,
-                  primaryColor: theme.primaryColor,
+                // Trend Chart — real per-day/per-month expense totals
+                BlocBuilder<ExpenseCubit, ExpenseState>(
+                  builder: (context, expenseState) {
+                    final allExpenses = expenseState is ExpenseLoaded
+                        ? expenseState.expenses
+                        : <ExpenseModel>[];
+
+                    return TrendChartSection(
+                      data: selectedPeriod == 'Weekly'
+                          ? _weeklyChartData(allExpenses)
+                          : _monthlyChartData(allExpenses),
+                      selectedPeriod: selectedPeriod,
+                      primaryColor: theme.primaryColor,
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
 
-                // Movement Indicators — filtered to selected period
+                // Movement Indicators — filtered to selected period, with
+                // change percentages computed against the prior period.
                 BlocBuilder<ExpenseCubit, ExpenseState>(
                   builder: (context, expenseState) {
                     return BlocBuilder<IncomeCubit, IncomeState>(
                       builder: (context, incomeState) {
-                        final filteredExpenses = expenseState is ExpenseLoaded
-                            ? _filterExpenses(expenseState.expenses)
+                        final allExpenses = expenseState is ExpenseLoaded
+                            ? expenseState.expenses
                             : <ExpenseModel>[];
-                        final filteredIncome = incomeState is IncomeLoaded
-                            ? _filterIncome(incomeState.income)
+                        final allIncome = incomeState is IncomeLoaded
+                            ? incomeState.income
                             : <IncomeModel>[];
+
+                        final filteredExpenses = _filterExpenses(allExpenses);
+                        final filteredIncome = _filterIncome(allIncome);
 
                         final totalExpenses =
                         filteredExpenses.fold(0.0, (sum, e) => sum + e.amount);
                         final totalIncome =
                         filteredIncome.fold(0.0, (sum, i) => sum + i.amount);
 
+                        final prevRange = _previousRange;
+                        final prevExpenses = allExpenses.where((e) =>
+                        !e.date.isBefore(prevRange.start) &&
+                            !e.date.isAfter(prevRange.end),
+                        ).fold(0.0, (sum, e) => sum + e.amount);
+                        final prevIncome = allIncome.where((i) =>
+                        !i.date.isBefore(prevRange.start) &&
+                            !i.date.isAfter(prevRange.end),
+                        ).fold(0.0, (sum, i) => sum + i.amount);
+
                         return MovementIndicators(
                           primaryColor: theme.primaryColor,
                           totalIncome: totalIncome,
                           totalExpenses: totalExpenses,
-                          // Change percentages are placeholder until you have
-                          // previous-period data to compare against.
-                          incomeChange: totalIncome > 0 ? 18.3 : 0.0,
-                          expenseChange: totalExpenses > 0 ? 5.2 : 0.0,
+                          incomeChange:
+                          _percentageChange(totalIncome, prevIncome).abs(),
+                          expenseChange:
+                          _percentageChange(totalExpenses, prevExpenses).abs(),
                         );
                       },
                     );

@@ -1,16 +1,18 @@
 // features/home/presentation/screens/home_screen.dart
+import 'package:budgeto/core/constants/app_strings.dart';
 import 'package:budgeto/core/drawer/my_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../presentation/cubits/auth_cubits/auth_cubit.dart';
 import '../../../../presentation/cubits/expense_cubits/expense_cubit.dart';
 import '../../../../presentation/cubits/income_cubit/income_cubit.dart';
+import 'package:budgeto/features/add_income_expense/expense_modal.dart';
+import 'package:budgeto/features/add_income_expense/income_modal.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/home_header.dart';
 import '../widgets/home_appbar.dart';
 import '../widgets/expense_list_section.dart';
-import '../../../../data/models/expense_model.dart';
-import '../../../../data/models/income_model.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,28 +37,62 @@ class _HomeScreenState extends State<HomeScreen> {
     return authState is AuthAuthenticated ? authState.user.id : '';
   }
 
+  @override
+  void initState() {
+    super.initState();
+    // Initial fetch happens after the first frame to ensure context is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchData();
+    });
+  }
+
+  void _fetchData() {
+    final userId = _userId;
+    if (userId.isNotEmpty) {
+      context.read<ExpenseCubit>().getExpenses(
+            userId,
+            startDate: _selectedRange.start,
+            endDate: _selectedRange.end,
+          );
+      context.read<IncomeCubit>().getIncome(
+            userId,
+            startDate: _selectedRange.start,
+            endDate: _selectedRange.end,
+          );
+    }
+  }
+
   void _onPeriodChanged(DateTimeRange range) {
     setState(() => _selectedRange = range);
-  }
-
-  List<ExpenseModel> _filterExpenses(List<ExpenseModel> all) {
-    return all.where((e) =>
-    !e.date.isBefore(_selectedRange.start) &&
-        !e.date.isAfter(_selectedRange.end)).toList();
-  }
-
-  List<IncomeModel> _filterIncome(List<IncomeModel> all) {
-    return all.where((i) =>
-    !i.date.isBefore(_selectedRange.start) &&
-        !i.date.isAfter(_selectedRange.end)).toList();
+    _fetchData();
   }
 
   Future<void> _onRefresh() async {
-    final userId = _userId;
-    if (userId.isNotEmpty) {
-      context.read<ExpenseCubit>().getExpenses(userId);
-      context.read<IncomeCubit>().getIncome(userId);
-    }
+    _fetchData();
+  }
+
+  void _showAddExpense() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ExpenseModal(
+        expenseCubit: context.read<ExpenseCubit>(),
+        incomeCubit: context.read<IncomeCubit>(),
+      ),
+    );
+  }
+
+  void _showAddIncome() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => IncomeModal(
+        expenseCubit: context.read<ExpenseCubit>(),
+        incomeCubit: context.read<IncomeCubit>(),
+      ),
+    );
   }
 
   @override
@@ -83,28 +119,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 24),
 
-                // Balance card — filtered to selected period
+                // Balance card with Swipe to Add
                 BlocBuilder<ExpenseCubit, ExpenseState>(
                   builder: (context, expenseState) {
                     return BlocBuilder<IncomeCubit, IncomeState>(
                       builder: (context, incomeState) {
-                        final filteredExpenses = expenseState is ExpenseLoaded
-                            ? _filterExpenses(expenseState.expenses)
-                            : <ExpenseModel>[];
-                        final filteredIncome = incomeState is IncomeLoaded
-                            ? _filterIncome(incomeState.income)
-                            : <IncomeModel>[];
+                        final totalExpenses = expenseState is ExpenseLoaded 
+                            ? expenseState.totalExpenses 
+                            : 0.0;
+                        final totalIncome = incomeState is IncomeLoaded 
+                            ? incomeState.totalIncome 
+                            : 0.0;
 
-                        final totalExpenses = filteredExpenses.fold(
-                            0.0, (sum, e) => sum + e.amount);
-                        final totalIncome = filteredIncome.fold(
-                            0.0, (sum, i) => sum + i.amount);
-
-                        return BalanceCard(
-                          totalBalance: totalIncome - totalExpenses,
-                          income: totalIncome,
-                          expenses: totalExpenses,
-                          savings: totalIncome - totalExpenses,
+                        return GestureDetector(
+                          onHorizontalDragEnd: (details) {
+                            if (details.primaryVelocity! < -500) {
+                              // Swipe Left -> Expense
+                              _showAddExpense();
+                            } else if (details.primaryVelocity! > 500) {
+                              // Swipe Right -> Income
+                              _showAddIncome();
+                            }
+                          },
+                          child: BalanceCard(
+                            totalBalance: totalIncome - totalExpenses,
+                            income: totalIncome,
+                            expenses: totalExpenses,
+                            savings: totalIncome - totalExpenses,
+                          ),
                         );
                       },
                     );
@@ -113,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 28),
 
-                // Expense list — filtered to selected period
+                // Expense list — now uses data already filtered by the Cubit
                 BlocBuilder<ExpenseCubit, ExpenseState>(
                   builder: (context, expenseState) {
                     if (expenseState is ExpenseLoading) {
@@ -126,9 +168,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
 
                     if (expenseState is ExpenseLoaded) {
-                      final filtered = _filterExpenses(expenseState.expenses);
+                      final expenses = expenseState.expenses;
 
-                      if (filtered.isEmpty) {
+                      if (expenses.isEmpty) {
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.all(32),
@@ -138,13 +180,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     size: 64, color: Colors.grey[400]),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No transactions yet',
+                                  AppStrings.noTransactionsYet,
                                   style: theme.textTheme.bodyMedium
                                       ?.copyWith(color: Colors.grey[600]),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Tap the + button to add your first transaction',
+                                  AppStrings.addFirstTransaction,
                                   style: theme.textTheme.bodySmall
                                       ?.copyWith(color: Colors.grey[500]),
                                 ),
@@ -154,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       }
 
-                      return ExpenseListSection(expenses: filtered);
+                      return ExpenseListSection(expenses: expenses);
                     }
 
                     if (expenseState is ExpenseError) {
@@ -167,14 +209,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   size: 48, color: Colors.red),
                               const SizedBox(height: 8),
                               Text(
-                                'Error: ${expenseState.message}',
+                                '${AppStrings.errorPrefix}${expenseState.message}',
                                 style: const TextStyle(color: Colors.red),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton(
                                 onPressed: _onRefresh,
-                                child: const Text('Retry'),
+                                child: const Text(AppStrings.retry),
                               ),
                             ],
                           ),

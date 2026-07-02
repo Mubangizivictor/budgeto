@@ -1,8 +1,10 @@
-// features/support/presentation/screens/help_support_screen.dart
+// features/support/help_support_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../../../presentation/cubits/auth_cubits/auth_cubit.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../presentation/cubits/auth_cubits/auth_cubit.dart';
 import '../auth/presentation/widgets/back_button.dart';
 import '../auth/presentation/widgets/loading_overlay.dart';
 import 'contact_card.dart';
@@ -23,9 +25,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authState = context.watch<AuthCubit>().state;
-    final userEmail = authState is AuthAuthenticated
-        ? authState.user.email
-        : '';
+    final userEmail =
+        authState is AuthAuthenticated ? authState.user.email : '';
 
     return LoadingOverlay(
       isLoading: _isLoading,
@@ -50,23 +51,28 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 children: const [
                   FaqItem(
                     question: 'How do I add an expense?',
-                    answer: 'Tap the + button at the bottom center, then select "Expense" and fill in the details.',
+                    answer:
+                        'Tap the + button at the bottom center, then select "Expense" and fill in the details.',
                   ),
                   FaqItem(
                     question: 'How do I add income?',
-                    answer: 'Tap the + button at the bottom center, then select "Income" and fill in the details.',
+                    answer:
+                        'Tap the + button at the bottom center, then select "Income" and fill in the details.',
                   ),
                   FaqItem(
                     question: 'How to view my spending trends?',
-                    answer: 'Go to the Flow tab to see your spending trends and cash flow analysis.',
+                    answer:
+                        'Go to the Flow tab to see your spending trends and cash flow analysis.',
                   ),
                   FaqItem(
                     question: 'Can I edit or delete a transaction?',
-                    answer: 'Yes, go to Vault tab, tap on any transaction and select edit or delete.',
+                    answer:
+                        'Yes, go to Vault tab, tap on any transaction and select edit or delete.',
                   ),
                   FaqItem(
                     question: 'How does dark mode work?',
-                    answer: 'Dark mode follows your system settings or you can toggle it from the drawer menu.',
+                    answer:
+                        'Dark mode follows your system settings or you can toggle it from the drawer menu.',
                   ),
                 ],
               ),
@@ -141,12 +147,14 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     onTap: () => _rateApp(),
                   ),
                   const SizedBox(height: 12),
-                  ContactCard(
-                    icon: LucideIcons.share2,
-                    title: 'Share with Friends',
-                    subtitle: 'Help others manage money',
-                    value: 'Share Now',
-                    onTap: () => _shareApp(),
+                  Builder(
+                    builder: (cardContext) => ContactCard(
+                      icon: LucideIcons.share2,
+                      title: 'Share with Friends',
+                      subtitle: 'Help others manage money',
+                      value: 'Share Now',
+                      onTap: () => _shareApp(cardContext),
+                    ),
                   ),
                 ],
               ),
@@ -159,17 +167,33 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   }
 
   void _sendEmail(String email) async {
-    // TODO: Implement email intent
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening email client to $email'),
-        backgroundColor: Colors.green,
-      ),
+    setState(() => _isLoading = true);
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: email,
+      query: 'subject=Budgeto Support Request',
     );
+
+    try {
+      if (await canLaunchUrl(emailLaunchUri)) {
+        await launchUrl(emailLaunchUri);
+      } else {
+        throw 'Could not launch $emailLaunchUri';
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open email client'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _startLiveChat() {
-    // TODO: Implement live chat
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Live chat feature coming soon!'),
@@ -178,53 +202,58 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     );
   }
 
-  void _openWebsite() {
-    // TODO: Implement URL launcher
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Opening website...'),
-        backgroundColor: Colors.green,
-      ),
-    );
+  void _openWebsite() async {
+    setState(() => _isLoading = true);
+    final Uri url = Uri.parse('https://www.budgeto.com');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not launch website'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _reportBug(String userEmail) {
-    // TODO: Implement bug reporting
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Report bug feature coming soon!'),
-        backgroundColor: Colors.orange,
-      ),
-    );
+    _sendEmail('bugs@budgeto.com');
   }
 
   void _requestFeature(String userEmail) {
-    // TODO: Implement feature request
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Feature request feature coming soon!'),
-        backgroundColor: Colors.orange,
-      ),
-    );
+    _sendEmail('features@budgeto.com');
   }
 
-  void _rateApp() {
-    // TODO: Implement app rating
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Thank you for rating!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+  void _rateApp() async {
+    setState(() => _isLoading = true);
+    final Uri url = Uri.parse('https://apps.apple.com/app/budgeto');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      // Silently fail or log
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
-  void _shareApp() {
-    // TODO: Implement share
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Share feature coming soon!'),
-        backgroundColor: Colors.orange,
-      ),
+  void _shareApp(BuildContext shareContext) {
+    final RenderBox? box = shareContext.findRenderObject() as RenderBox?;
+    final Rect? shareRect = box != null 
+        ? box.localToGlobal(Offset.zero) & box.size 
+        : null;
+
+    Share.share(
+      'Check out Budgeto - the smartest way to track your expenses! https://budgeto.com',
+      subject: 'Manage your money better with Budgeto',
+      sharePositionOrigin: shareRect,
     );
   }
 }

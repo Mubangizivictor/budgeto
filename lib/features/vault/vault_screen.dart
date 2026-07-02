@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/shared/widgets/app_bars.dart';
 import '../../presentation/cubits/expense_cubits/expense_cubit.dart';
 import '../../presentation/cubits/income_cubit/income_cubit.dart';
@@ -22,21 +23,21 @@ class _VaultScreenState extends State<VaultScreen> {
   String selectedCategory = 'All';
 
   final List<String> categories = [
-    'All',
-    'Food',
-    'Shopping',
-    'Transport',
-    'Entertainment',
-    'Health',
-    'Education',
-    'Bills',
-    'Other',
+    AppStrings.all,
+    AppStrings.food,
+    AppStrings.shopping,
+    AppStrings.transport,
+    AppStrings.entertainment,
+    AppStrings.health,
+    AppStrings.education,
+    AppStrings.bills,
+    AppStrings.other,
   ];
 
   // ── Filtering ────────────────────────────────────────────────────────────
 
   List<ExpenseModel> _filterExpenses(List<ExpenseModel> expenses) {
-    if (selectedCategory == 'All') return expenses;
+    if (selectedCategory == AppStrings.all) return expenses;
     return expenses
         .where((e) =>
     e.category.toLowerCase() == selectedCategory.toLowerCase())
@@ -47,7 +48,7 @@ class _VaultScreenState extends State<VaultScreen> {
     // Income has no category matching expense categories, so when the user
     // picks a specific expense category, hide income entries (they belong to
     // their own 'source' field). Only show income when 'All' is selected.
-    if (selectedCategory == 'All') return income;
+    if (selectedCategory == AppStrings.all) return income;
     return [];
   }
 
@@ -87,8 +88,8 @@ class _VaultScreenState extends State<VaultScreen> {
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = DateTime(now.year, now.month, now.day - 1);
 
-    if (date == today) return 'Today';
-    if (date == yesterday) return 'Yesterday';
+    if (date == today) return AppStrings.today;
+    if (date == yesterday) return AppStrings.yesterday;
     return '${date.day}/${date.month}/${date.year}';
   }
 
@@ -225,8 +226,8 @@ class _VaultScreenState extends State<VaultScreen> {
                                     size: 64, color: Colors.grey[400]),
                                 const SizedBox(height: 16),
                                 Text(
-                                  selectedCategory == 'All'
-                                      ? 'No transactions yet'
+                                  selectedCategory == AppStrings.all
+                                      ? AppStrings.noTransactions
                                       : 'No $selectedCategory transactions',
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                       color: Colors.grey[600]),

@@ -17,8 +17,16 @@ class TrendChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final maxValue = selectedPeriod == 'Weekly' ? 220 : 5000;
     final labelKey = selectedPeriod == 'Weekly' ? 'day' : 'month';
+
+    // Scale bars against the actual data range instead of an assumed
+    // fixed ceiling, so real (not demo) amounts always render sensibly.
+    final maxValue = data.isEmpty
+        ? 1
+        : data
+            .map((d) => d['value'] as num)
+            .fold<num>(0, (max, v) => v > max ? v : max)
+            .clamp(1, double.infinity);
 
     // Get a brighter version of primary color for dark mode
     final barColor = isDark

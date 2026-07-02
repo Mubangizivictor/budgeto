@@ -1,6 +1,5 @@
 // features/support/presentation/widgets/help_section.dart
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class HelpSection extends StatelessWidget {
   final String title;

@@ -1,6 +1,5 @@
 // features/support/presentation/widgets/contact_card.dart
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ContactCard extends StatelessWidget {
   final IconData icon;

@@ -1,4 +1,5 @@
 // features/home/presentation/widgets/balance_card.dart
+import 'package:budgeto/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -39,7 +40,7 @@ class BalanceCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Total Balance', style: TextStyle(color: Colors.white70)),
+                  const Text(AppStrings.totalBalance, style: TextStyle(color: Colors.white70)),
                   const SizedBox(height: 8),
                   Text(
                     '\$${totalBalance.toStringAsFixed(2)}', // ✅ FIXED: using actual totalBalance
@@ -65,9 +66,9 @@ class BalanceCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildBalanceInfo('Income', '\$${income.toStringAsFixed(0)}', Colors.green),
-              _buildBalanceInfo('Expenses', '\$${expenses.toStringAsFixed(0)}', theme.primaryColor),
-              _buildBalanceInfo('Savings', '\$${savings.toStringAsFixed(0)}', Colors.blue),
+              _buildBalanceInfo(AppStrings.income, '\$${income.toStringAsFixed(0)}', Colors.green),
+              _buildBalanceInfo(AppStrings.expenses, '\$${expenses.toStringAsFixed(0)}', theme.primaryColor),
+              _buildBalanceInfo(AppStrings.savings, '\$${savings.toStringAsFixed(0)}', Colors.blue),
             ],
           ),
         ],

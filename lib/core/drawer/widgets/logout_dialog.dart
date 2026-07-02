@@ -1,4 +1,5 @@
 // core/shared/widgets/drawer/logout_dialog.dart
+import 'package:budgeto/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../features/auth/presentation/screens/login_screen.dart';
@@ -24,17 +25,17 @@ class LogoutDialog {
                 size: 28,
               ),
               const SizedBox(width: 12),
-              const Text('Logout'),
+              const Text(AppStrings.logoutConfirmationTitle),
             ],
           ),
           content: const Text(
-            'Are you sure you want to logout?',
+            AppStrings.logoutConfirmationMessage,
             style: TextStyle(fontSize: 16),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: const Text(AppStrings.cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -55,7 +56,7 @@ class LogoutDialog {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Logout'),
+              child: const Text(AppStrings.logout),
             ),
           ],
         );

@@ -26,6 +26,8 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
     final authState = context.watch<AuthCubit>().state;
     final userName =
     authState is AuthAuthenticated ? authState.user.fullName : '';
+    final photoUrl =
+    authState is AuthAuthenticated ? authState.user.photoUrl : null;
 
     return AppBar(
       elevation: 0,
@@ -37,12 +39,14 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           ProfileAvatar(
             size: 38,
             iconSize: 20,
+            photoUrl: photoUrl,
             onTap: () => Scaffold.of(context).openDrawer(),
           ),
           const SizedBox(width: 10),
           GreetingName(name: userName),
         ],
       ),
+      actionsPadding: EdgeInsets.only(right: 10),
       actions: [
         CustomIconButton(
           icon: theme.brightness == Brightness.dark
@@ -52,6 +56,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         const SizedBox(width: 4),
         const ExportButton(),
+        const SizedBox(width: 4),
         const NotificationBell(),
         const SizedBox(width: 4),
       ],

@@ -15,35 +15,54 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuthAndNavigate();
+    // Wait for auth cubit to be ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthAndNavigate();
+    });
   }
 
   Future<void> _checkAuthAndNavigate() async {
-    // Wait for splash animation
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Wait for splash animation
+      await Future.delayed(const Duration(seconds: 2));
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    final authCubit = context.read<AuthCubit>();
-    final isLoggedIn = authCubit.state is AuthAuthenticated;
-
-    // Check if first time user
-    final prefs = await SharedPreferences.getInstance();
-    final isFirstTime = prefs.getBool('isFirstTime') ?? true;
-
-    if (isFirstTime) {
-      // First time user - show onboarding
-      await prefs.setBool('isFirstTime', false);
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/boarding');
+      // Get the auth state after it has been initialized
+      final authCubit = context.read<AuthCubit>();
+      
+      // If still loading, wait a bit more or force a check
+      if (authCubit.state is AuthInitial || authCubit.state is AuthLoading) {
+        // You might want a timeout here
+        await authCubit.checkAuthStatus();
       }
-    } else if (isLoggedIn) {
-      // User is logged in - go to home
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+      
+      final authState = authCubit.state;
+
+      // Check if first time user
+      final prefs = await SharedPreferences.getInstance();
+      final isFirstTime = prefs.getBool('isFirstTime') ?? true;
+
+      if (isFirstTime) {
+        // First time user - show onboarding
+        await prefs.setBool('isFirstTime', false);
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/boarding');
+        }
+      } else if (authState is AuthAuthenticated) {
+        // User is logged in - go to home
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } else {
+        // User not logged in - go to login
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
       }
-    } else {
-      // User not logged in - go to login
+    } catch (e) {
+      debugPrint('Navigation error: $e');
+      // Fallback to login if something goes wrong
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/login');
       }

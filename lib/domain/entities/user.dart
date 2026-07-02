@@ -5,6 +5,7 @@ class User {
   final String fullName;
   final DateTime createdAt;
   final double totalBalance;
+  final String? photoUrl;
 
   const User({
     required this.id,
@@ -12,5 +13,6 @@ class User {
     required this.fullName,
     required this.createdAt,
     required this.totalBalance,
+    this.photoUrl,
   });
 }

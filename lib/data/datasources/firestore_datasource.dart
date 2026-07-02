@@ -56,6 +56,13 @@ class FirestoreDataSource {
     });
   }
 
+  Future<void> updateUserPhotoUrl(String userId, String photoUrl) async {
+    await _firestore.collection('users').doc(userId).update({
+      'photoUrl': photoUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// Deletes the user document, all their expenses, all their income,
   /// and all their notifications in Firestore.
   /// Call this BEFORE deleting the Firebase Auth account so the user

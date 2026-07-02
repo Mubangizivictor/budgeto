@@ -1,4 +1,5 @@
 // domain/repositories/auth_repository.dart
+import 'dart:io';
 import '../../domain/entities/user.dart';
 
 abstract class AuthRepository {
@@ -12,6 +13,17 @@ abstract class AuthRepository {
 
   Future<User?> getCurrentUserFromFirestore();
   Future<void> updateProfile({required String userId, required String fullName});
+
+  /// Re-establishes a fresh login session. Required before [deleteAccount]
+  /// so Firebase doesn't reject the deletion with `requires-recent-login`.
+  Future<void> reauthenticate({required String password});
+
+  /// Uploads [photo] to Storage and saves its URL on the user's profile.
+  /// Returns the new photo URL.
+  Future<String> updateProfilePhoto({
+    required String userId,
+    required File photo,
+  });
 
   /// Deletes all Firestore data then removes the Firebase Auth account.
   Future<void> deleteAccount({required String userId});

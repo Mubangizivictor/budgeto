@@ -32,9 +32,29 @@ class AuthDataSource {
     await _auth.signOut();
   }
 
+  /// Re-establishes a fresh login session using the user's password.
+  /// Required before sensitive operations (like account deletion) that
+  /// Firebase rejects with `requires-recent-login` on a stale session.
+  Future<void> reauthenticateWithPassword(String password) async {
+    final user = _auth.currentUser;
+    final email = user?.email;
+    if (user == null || email == null) {
+      throw firebase_auth.FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed-in user to reauthenticate.',
+      );
+    }
+    final credential = firebase_auth.EmailAuthProvider.credential(
+      email: email,
+      password: password,
+    );
+    await user.reauthenticateWithCredential(credential);
+  }
+
   /// Permanently deletes the Firebase Auth account.
   /// Must be called AFTER Firestore data is deleted so the user is still
-  /// authenticated during the Firestore writes.
+  /// authenticated during the Firestore writes, and after a fresh
+  /// reauthentication so it doesn't fail with `requires-recent-login`.
   Future<void> deleteAccount() async {
     await _auth.currentUser?.delete();
   }

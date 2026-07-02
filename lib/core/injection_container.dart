@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import '../../data/datasources/auth_datasource.dart';
 import '../../data/datasources/firestore_datasource.dart';
 import '../../data/datasources/notification_datasource.dart';
+import '../../data/datasources/storage_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/notification_repository_impl.dart';
 import '../../data/repositories/transaction_repository_impl.dart';
@@ -46,6 +47,7 @@ Future<void> init() async {
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
     authDataSource: sl(),
     firestoreDataSource: sl(),
+    storageDataSource: sl(),
   ));
 
   sl.registerLazySingleton<TransactionRepository>(
@@ -58,4 +60,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AuthDataSource());
   sl.registerLazySingleton(() => FirestoreDataSource());
   sl.registerLazySingleton(() => NotificationDataSource());
+  sl.registerLazySingleton(() => StorageDataSource());
 }

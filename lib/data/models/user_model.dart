@@ -9,6 +9,7 @@ class UserModel extends Equatable {
   final String fullName;
   final DateTime createdAt;
   final double totalBalance;
+  final String? photoUrl;
 
   const UserModel({
     required this.id,
@@ -16,6 +17,7 @@ class UserModel extends Equatable {
     required this.fullName,
     required this.createdAt,
     this.totalBalance = 0.0,
+    this.photoUrl,
   });
 
   // ✅ From Firestore (with proper error handling)
@@ -34,6 +36,7 @@ class UserModel extends Equatable {
       fullName: data['fullName'] as String? ?? '',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       totalBalance: (data['totalBalance'] as num?)?.toDouble() ?? 0.0,
+      photoUrl: data['photoUrl'] as String?,
     );
   }
 
@@ -45,6 +48,7 @@ class UserModel extends Equatable {
       fullName: json['fullName'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       totalBalance: (json['totalBalance'] as num).toDouble(),
+      photoUrl: json['photoUrl'] as String?,
     );
   }
 
@@ -55,6 +59,7 @@ class UserModel extends Equatable {
       'fullName': fullName,
       'createdAt': Timestamp.fromDate(createdAt),
       'totalBalance': totalBalance,
+      'photoUrl': photoUrl,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -67,6 +72,7 @@ class UserModel extends Equatable {
       'fullName': fullName,
       'createdAt': createdAt.toIso8601String(),
       'totalBalance': totalBalance,
+      'photoUrl': photoUrl,
     };
   }
 
@@ -77,6 +83,7 @@ class UserModel extends Equatable {
     String? fullName,
     DateTime? createdAt,
     double? totalBalance,
+    String? photoUrl,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -84,6 +91,7 @@ class UserModel extends Equatable {
       fullName: fullName ?? this.fullName,
       createdAt: createdAt ?? this.createdAt,
       totalBalance: totalBalance ?? this.totalBalance,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 
@@ -95,6 +103,7 @@ class UserModel extends Equatable {
       fullName: fullName,
       createdAt: createdAt,
       totalBalance: totalBalance,
+      photoUrl: photoUrl,
     );
   }
 
@@ -106,9 +115,11 @@ class UserModel extends Equatable {
       fullName: user.fullName,
       createdAt: user.createdAt,
       totalBalance: user.totalBalance,
+      photoUrl: user.photoUrl,
     );
   }
 
   @override
-  List<Object?> get props => [id, email, fullName, createdAt, totalBalance];
+  List<Object?> get props =>
+      [id, email, fullName, createdAt, totalBalance, photoUrl];
 }

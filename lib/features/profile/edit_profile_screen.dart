@@ -1,7 +1,11 @@
 // features/profile/presentation/screens/edit_profile_screen.dart
+import 'dart:io';
+import 'package:budgeto/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/shared/widgets/profile_avatar.dart';
+import '../../../../domain/entities/user.dart';
 import '../../../../presentation/cubits/auth_cubits/auth_cubit.dart';
 import '../auth/presentation/widgets/auth_button.dart';
 import '../auth/presentation/widgets/auth_text_field.dart';
@@ -19,6 +23,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
+  // Kept so the avatar doesn't flicker to a placeholder while AuthLoading
+  // is emitted mid-save/mid-upload.
+  User? _lastKnownUser;
 
   @override
   void initState() {
@@ -31,7 +38,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (authState is AuthAuthenticated) {
       _fullNameController.text = authState.user.fullName;
       _emailController.text = authState.user.email;
+      _lastKnownUser = authState.user;
     }
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+
+    await context.read<AuthCubit>().updateProfilePhoto(File(picked.path));
   }
 
   Future<void> _saveChanges() async {
@@ -51,36 +71,55 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _confirmDeleteAccount() async {
-    final confirmed = await showDialog<bool>(
+    final passwordController = TextEditingController();
+    final password = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text(
-          'Delete Account',
+          AppStrings.deleteAccountConfirmationTitle,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: const Text(
-          'This will permanently delete your account and all your data '
-              '(expenses, income, notifications). This cannot be undone.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(AppStrings.deleteAccountConfirmationMessage),
+            const SizedBox(height: 16),
+            const Text(
+              'Enter your password to confirm.',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Password',
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(AppStrings.cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => Navigator.pop(ctx, passwordController.text),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text(
-              'Delete',
+              AppStrings.delete,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],
       ),
     );
+    passwordController.dispose();
 
-    if (confirmed == true && mounted) {
-      await context.read<AuthCubit>().deleteAccount();
+    if (password != null && password.isNotEmpty && mounted) {
+      await context.read<AuthCubit>().deleteAccount(password: password);
     }
   }
 
@@ -94,7 +133,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (state is ProfileUpdated) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Profile updated successfully!'),
+              content: Text(AppStrings.profileUpdated),
               backgroundColor: Colors.green,
             ),
           );
@@ -118,6 +157,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           );
         }
+
+        if (state is AuthAuthenticated) {
+          _lastKnownUser = state.user;
+        }
       },
       builder: (context, state) {
         final isLoading = state is AuthLoading;
@@ -127,7 +170,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             appBar: AppBar(
-              title: const Text('Edit Profile'),
+              title: const Text(AppStrings.editProfile),
               centerTitle: true,
               backgroundColor: theme.scaffoldBackgroundColor,
               elevation: 0,
@@ -139,17 +182,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    const ProfileAvatar(size: 100),
+                    ProfileAvatar(
+                      size: 100,
+                      photoUrl: _lastKnownUser?.photoUrl,
+                      isUploading: isLoading,
+                      showEditBadge: true,
+                      onTap: isLoading ? null : _pickAndUploadPhoto,
+                    ),
                     const SizedBox(height: 32),
 
                     AuthTextField(
                       controller: _fullNameController,
-                      label: 'Full Name',
-                      hint: 'Enter your full name',
+                      label: AppStrings.fullName,
+                      hint: AppStrings.fullNameHint,
                       icon: Icons.person_outline,
                       validator: (val) {
                         if (val == null || val.trim().isEmpty) {
-                          return 'Full name cannot be empty';
+                          return AppStrings.fullNameRequired;
                         }
                         return null;
                       },
@@ -158,8 +207,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     AuthTextField(
                       controller: _emailController,
-                      label: 'Email',
-                      hint: 'Enter your email',
+                      label: AppStrings.email,
+                      hint: AppStrings.emailHint,
                       icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       enabled: false,
@@ -167,7 +216,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 32),
 
                     AuthButton(
-                      label: isLoading ? 'Saving...' : 'Save Changes',
+                      label: isLoading ? AppStrings.saving : AppStrings.saveChanges,
                       onPressed: isLoading ? null : _saveChanges,
                     ),
                     const SizedBox(height: 16),
@@ -186,7 +235,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                         child: const Text(
-                          'Delete Account',
+                          AppStrings.deleteAccount,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -197,7 +246,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     const SizedBox(height: 8),
                     Text(
-                      'Permanently deletes your account and all data.',
+                      AppStrings.deleteAccountDescription,
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: Colors.grey[500]),
                       textAlign: TextAlign.center,

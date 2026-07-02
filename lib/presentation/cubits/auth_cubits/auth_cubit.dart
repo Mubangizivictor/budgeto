@@ -1,4 +1,5 @@
 // presentation/cubits/auth_cubits/auth_cubit.dart
+import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/repositories/auth_repository.dart';
@@ -11,24 +12,40 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit({required AuthRepository authRepository})
       : _authRepository = authRepository,
-        super(AuthInitial());
+        super(AuthInitial()) {
+    // Call checkAuthStatus immediately when cubit is created
+    checkAuthStatus();
+  }
 
   Future<void> checkAuthStatus() async {
+    // First check if user is logged in with Firebase Auth
     if (!_authRepository.isLoggedIn()) {
       emit(AuthUnauthenticated());
       return;
     }
+
+    emit(AuthLoading());
+
     try {
+      // Try to get user from Firestore first
       final user = await _authRepository.getCurrentUserFromFirestore();
       if (user != null) {
         emit(AuthAuthenticated(user));
+        return;
+      }
+
+      // Fallback: get from local auth
+      final localUser = _authRepository.getCurrentUser();
+      if (localUser != null) {
+        emit(AuthAuthenticated(localUser));
       } else {
         emit(AuthUnauthenticated());
       }
-    } catch (_) {
-      final user = _authRepository.getCurrentUser();
-      if (user != null) {
-        emit(AuthAuthenticated(user));
+    } catch (e) {
+      // On error, still try to get local user
+      final localUser = _authRepository.getCurrentUser();
+      if (localUser != null) {
+        emit(AuthAuthenticated(localUser));
       } else {
         emit(AuthUnauthenticated());
       }
@@ -90,9 +107,6 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// Updates fullName in Firebase Auth + Firestore, then emits
-  /// [ProfileUpdated] (not [AuthAuthenticated]) so the EditProfileScreen
-  /// listener only fires on an actual save — not on every auth state change.
   Future<void> updateProfile({required String fullName}) async {
     final current = state;
     if (current is! AuthAuthenticated) return;
@@ -109,9 +123,8 @@ class AuthCubit extends Cubit<AuthState> {
         fullName: fullName,
         createdAt: current.user.createdAt,
         totalBalance: current.user.totalBalance,
+        photoUrl: current.user.photoUrl,
       );
-      // Emit ProfileUpdated first so the screen can react to it,
-      // then settle back to AuthAuthenticated for the rest of the app.
       emit(ProfileUpdated(updatedUser));
       emit(AuthAuthenticated(updatedUser));
     } catch (e) {
@@ -120,13 +133,50 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// Deletes all Firestore data then removes the Firebase Auth account.
-  /// Emits [AccountDeleted] on success so the app can navigate to login.
-  Future<void> deleteAccount() async {
+  Future<void> updateProfilePhoto(File photo) async {
     final current = state;
     if (current is! AuthAuthenticated) return;
 
     emit(AuthLoading());
+    try {
+      final photoUrl = await _authRepository.updateProfilePhoto(
+        userId: current.user.id,
+        photo: photo,
+      );
+      final updatedUser = User(
+        id: current.user.id,
+        email: current.user.email,
+        fullName: current.user.fullName,
+        createdAt: current.user.createdAt,
+        totalBalance: current.user.totalBalance,
+        photoUrl: photoUrl,
+      );
+      emit(ProfileUpdated(updatedUser));
+      emit(AuthAuthenticated(updatedUser));
+    } catch (e) {
+      emit(current);
+      emit(AuthError(e.toString()));
+    }
+  }
+
+  /// Requires [password] to establish a fresh login session before any
+  /// data is deleted, so a stale session can't leave the account orphaned
+  /// (Firestore data gone, Auth account still present).
+  Future<void> deleteAccount({required String password}) async {
+    final current = state;
+    if (current is! AuthAuthenticated) return;
+
+    emit(AuthLoading());
+    try {
+      await _authRepository.reauthenticate(password: password);
+    } catch (e) {
+      emit(current);
+      emit(const AuthError(
+        'Incorrect password. Please re-enter your password to confirm account deletion.',
+      ));
+      return;
+    }
+
     try {
       await _authRepository.deleteAccount(userId: current.user.id);
       emit(AccountDeleted());

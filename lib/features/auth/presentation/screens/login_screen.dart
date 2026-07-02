@@ -1,6 +1,7 @@
 // presentation/screens/auth/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/injection_container.dart';
 import '../forgot_password/widgets/forgot_password_screen.dart';
 import '../widgets/auth_button.dart';
@@ -70,22 +71,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
 
                         const AuthHeader(
-                          title: 'Welcome Back!',
-                          subtitle: 'Sign in to continue managing your finances',
+                          title: AppStrings.welcomeBack,
+                          subtitle: AppStrings.loginSubtitle,
                         ),
                         const SizedBox(height: 48),
                         AuthTextField(
                           controller: emailController,
-                          label: 'Email',
-                          hint: 'Enter your email',
+                          label: AppStrings.email,
+                          hint: AppStrings.emailHint,
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                         ),
                         const SizedBox(height: 24),
                         AuthTextField(
                           controller: passwordController,
-                          label: 'Password',
-                          hint: 'Enter your password',
+                          label: AppStrings.password,
+                          hint: AppStrings.passwordHint,
                           icon: Icons.lock_outline,
                           obscureText: obscurePassword,
                           suffixIcon: IconButton(
@@ -116,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                               },
                               child: Text(
-                                'Forgot Password?',
+                                AppStrings.forgotPassword,
                                 style: TextStyle(
                                   color: theme.colorScheme.primary,
                                   fontWeight: FontWeight.w600,
@@ -127,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
                         AuthButton(
-                          label: 'Sign In',
+                          label: AppStrings.signIn,
                           onPressed: () {
                             context.read<AuthCubit>().signIn(
                               email: emailController.text.trim(),
@@ -143,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "Don't have an account? ",
+                              AppStrings.dontHaveAccount,
                               style: theme.textTheme.bodyMedium,
                             ),
                             GestureDetector(
@@ -154,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                               },
                               child: Text(
-                                'Sign Up',
+                                AppStrings.signUp,
                                 style: TextStyle(
                                   color: theme.colorScheme.primary,
                                   fontWeight: FontWeight.bold,

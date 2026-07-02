@@ -9,8 +9,8 @@ plugins {
 }
 
 android {
-    namespace = "com.example.budgeto"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "com.budgeto.app"  // Changed from com.example.budgeto
+    compileSdk = 34  // Set to 34 explicitly
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -23,25 +23,43 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.budgeto"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // TODO: Update this to your unique Application ID
+        applicationId = "com.budgeto.app"
+        minSdk = 21  // Set minimum SDK to 21 (Android 5.0)
+        targetSdk = 34  // Set target SDK to 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true  // Add this for large apps
     }
 
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // For now, using debug signing (not for production!)
             signingConfig = signingConfigs.getByName("debug")
+
+            // Add these for release optimization
+            minifyEnabled = false
+            shrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+
+        debug {
+            // Debug specific settings
+            minifyEnabled = false
+            debuggable = true
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+// Add this to handle large apps
+dependencies {
+    implementation 'androidx.multidex:multidex:2.0.1'
 }

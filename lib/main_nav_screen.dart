@@ -14,6 +14,7 @@ import '../../features/vault/vault_screen.dart';
 import '../../features/add_income_expense/main_fab.dart';
 import '../../features/add_income_expense/transaction_type_modal.dart';
 import 'core/injection_container.dart';
+import 'core/services/notification_service.dart';
 
 class MainNavScreen extends StatefulWidget {
   const MainNavScreen({super.key});
@@ -64,6 +65,9 @@ class _MainNavScreenState extends State<MainNavScreen> {
         _expenseCubit.getExpenses(userId);
         _incomeCubit.getIncome(userId);
         _notificationCubit.init(userId);
+        // Fire-and-forget: sends weekly/monthly summaries if due. There's
+        // no background scheduler, so this app-open check is the trigger.
+        sl<NotificationService>().checkAndSendPeriodicSummaries(userId);
       }
     }
   }

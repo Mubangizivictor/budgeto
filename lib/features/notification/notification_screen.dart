@@ -1,4 +1,5 @@
 // features/notifications/notification_screen.dart
+import 'package:budgeto/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -24,7 +25,7 @@ class NotificationScreen extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
-          'Notifications',
+          AppStrings.notifications,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -41,7 +42,7 @@ class NotificationScreen extends StatelessWidget {
                 onPressed: () =>
                     context.read<NotificationCubit>().markAllAsRead(userId),
                 child: Text(
-                  'Mark all read',
+                  AppStrings.markAllRead,
                   style: TextStyle(color: theme.colorScheme.primary),
                 ),
               );
@@ -89,7 +90,7 @@ class NotificationScreen extends StatelessWidget {
                         size: 64, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     Text(
-                      'No notifications yet',
+                      AppStrings.noNotifications,
                       style: theme.textTheme.bodyLarge
                           ?.copyWith(color: Colors.grey[600]),
                     ),
@@ -172,10 +173,10 @@ class _NotificationTile extends StatelessWidget {
 
   String _timeAgo(DateTime date) {
     final diff = DateTime.now().difference(date);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return AppStrings.justNow;
+    if (diff.inMinutes < 60) return '${diff.inMinutes}${AppStrings.minutesAgo}';
+    if (diff.inHours < 24) return '${diff.inHours}${AppStrings.hoursAgo}';
+    if (diff.inDays < 7) return '${diff.inDays}${AppStrings.daysAgo}';
     return '${date.day}/${date.month}/${date.year}';
   }
 

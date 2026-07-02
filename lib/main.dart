@@ -1,6 +1,12 @@
 // main.dart
-import 'package:budgeto/core/splash/splash_screen.dart';
+import 'dart:developer';
+import 'package:budgeto/presentation/cubits/notification_cubit/notification_cubit/notification_cubit.dart';
+
+import 'core/local_storage/hive_service.dart';
+import 'core/notifications/notification_manager.dart';
+import 'core/splash/splash_screen.dart';
 import 'package:budgeto/core/theme/theme_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,15 +19,43 @@ import 'main_nav_screen.dart';
 import 'presentation/cubits/auth_cubits/auth_cubit.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    log('Starting Budgeto...');
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    log('Firebase initialized');
 
-  await di.init();
+    // Enable offline persistence for Firestore.
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
 
-  runApp(const MyApp());
+    // Initializing Hive for my local storage
+    await HiveService.init();
+    log('Hive initialized');
+
+    // Initialize Dependency Injection
+    await di.init();
+    log('DI initialized');
+
+    // Setting up notifications
+    // We get it from DI to ensure we use the same instance throughout the app
+    final notificationManager = di.sl<NotificationManager>();
+    await notificationManager.init().catchError((e) {
+      log('Notification Manager initialization failed: $e');
+    });
+    log('Notifications initialized');
+
+    runApp(const MyApp());
+  } catch (e, stackTrace) {
+    log('Error during initialization: $e', stackTrace: stackTrace);
+    // Even if initialization fails partially, we try to run the app
+    runApp(const MyApp());
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -39,6 +73,9 @@ class MyApp extends StatelessWidget {
         providers: [
           BlocProvider(
             create: (context) => di.sl<AuthCubit>()..checkAuthStatus(),
+          ),
+          BlocProvider(
+            create: (context) => di.sl<NotificationCubit>(),
           ),
         ],
         child: const AppRoot(),

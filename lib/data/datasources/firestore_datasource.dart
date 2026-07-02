@@ -56,6 +56,16 @@ class FirestoreDataSource {
     });
   }
 
+  /// Persists this device's FCM token on the user doc so server-side/
+  /// targeted push notifications can reach it. Merges so it's safe to call
+  /// before the user doc necessarily exists yet.
+  Future<void> updateFcmToken(String userId, String token) async {
+    await _firestore.collection('users').doc(userId).set({
+      'fcmToken': token,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<void> updateUserPhotoUrl(String userId, String photoUrl) async {
     await _firestore.collection('users').doc(userId).update({
       'photoUrl': photoUrl,

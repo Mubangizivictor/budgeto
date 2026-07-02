@@ -1,13 +1,16 @@
 // core/services/notification_service.dart
-import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../data/models/expense_model.dart';
 import '../../data/models/income_model.dart';
 import '../../data/models/notification_model.dart';
 import '../../data/repositories/notification_repository.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../local_storage/hive_service.dart';
+import '../notifications/notification_manager.dart';
 
 class NotificationService {
   final NotificationRepository _repository;
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  final NotificationManager _notificationManager;
+  final TransactionRepository _transactionRepository;
 
   // Budget limits per category (can be made user-configurable later).
   static const Map<String, double> _categoryBudgets = {
@@ -21,13 +24,13 @@ class NotificationService {
     'other': 200,
   };
 
-  NotificationService({required NotificationRepository repository})
-      : _repository = repository;
-
-  /// Call once at app start to request FCM permission and store the token.
-  Future<void> init() async {
-    await _fcm.requestPermission();
-  }
+  NotificationService({
+    required NotificationRepository repository,
+    required NotificationManager notificationManager,
+    required TransactionRepository transactionRepository,
+  })  : _repository = repository,
+        _notificationManager = notificationManager,
+        _transactionRepository = transactionRepository;
 
   // ── Transaction added ────────────────────────────────────────────────────
 
@@ -199,6 +202,79 @@ class NotificationService {
     );
   }
 
+  // ── Periodic summaries ───────────────────────────────────────────────────
+  //
+  // There's no background scheduler in this app, so summaries are checked
+  // opportunistically whenever the app is opened: if a week/month has
+  // elapsed since the last one we sent, send it now.
+
+  static const _lastWeeklySummaryKey = 'lastWeeklySummarySentAt';
+  static const _lastMonthlySummaryKey = 'lastMonthlySummarySentAt';
+
+  Future<void> checkAndSendPeriodicSummaries(String userId) async {
+    final settings = await _repository.getSettings(userId);
+    final now = DateTime.now();
+
+    if (settings.weeklySummary) {
+      final lastSent = _readTimestamp(userId, _lastWeeklySummaryKey);
+      if (lastSent == null || now.difference(lastSent).inDays >= 7) {
+        final start = now.subtract(const Duration(days: 7));
+        final totals = await _totalsForRange(userId, start, now);
+        await sendWeeklySummary(
+          userId: userId,
+          totalIncome: totals.income,
+          totalExpenses: totals.expenses,
+        );
+        await _writeTimestamp(userId, _lastWeeklySummaryKey, now);
+      }
+    }
+
+    if (settings.monthlySummary) {
+      final monthStart = DateTime(now.year, now.month, 1);
+      final lastSent = _readTimestamp(userId, _lastMonthlySummaryKey);
+      if (lastSent == null || lastSent.isBefore(monthStart)) {
+        final totals = await _totalsForRange(userId, monthStart, now);
+        await sendMonthlySummary(
+          userId: userId,
+          totalIncome: totals.income,
+          totalExpenses: totals.expenses,
+        );
+        await _writeTimestamp(userId, _lastMonthlySummaryKey, now);
+      }
+    }
+  }
+
+  Future<({double income, double expenses})> _totalsForRange(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final expenses = await _transactionRepository
+        .getExpenses(userId, startDate: start, endDate: end)
+        .first;
+    final income = await _transactionRepository
+        .getIncome(userId, startDate: start, endDate: end)
+        .first;
+    return (
+      income: income.fold(0.0, (sum, i) => sum + i.amount),
+      expenses: expenses.fold(0.0, (sum, e) => sum + e.amount),
+    );
+  }
+
+  DateTime? _readTimestamp(String userId, String key) {
+    final raw = HiveService.getData(HiveService.settingsBox, '${key}_$userId');
+    if (raw is! String) return null;
+    return DateTime.tryParse(raw);
+  }
+
+  Future<void> _writeTimestamp(String userId, String key, DateTime value) {
+    return HiveService.saveData(
+      HiveService.settingsBox,
+      '${key}_$userId',
+      value.toIso8601String(),
+    );
+  }
+
   // ── Internal helper ───────────────────────────────────────────────────────
 
   Future<void> _addNotification({
@@ -219,6 +295,10 @@ class NotificationService {
       metadata: metadata,
     );
     await _repository.addNotification(userId, notification);
+
+    // Also surface it as an OS heads-up banner, not just an in-app list
+    // entry, so the user notices budget/balance events in the moment.
+    await _notificationManager.showLocalNotification(title: title, body: body);
   }
 
   String _capitalize(String s) =>

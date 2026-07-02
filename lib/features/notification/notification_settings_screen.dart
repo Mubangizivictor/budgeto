@@ -1,6 +1,7 @@
 // features/notifications/notification_settings_screen.dart
 // ignore_for_file: deprecated_member_use
 
+import 'package:budgeto/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -44,7 +45,7 @@ class _NotificationSettingsScreenState
           backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
             title: const Text(
-              'Notification Settings',
+              AppStrings.notificationSettings,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             backgroundColor: theme.scaffoldBackgroundColor,
@@ -54,13 +55,12 @@ class _NotificationSettingsScreenState
           body: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              _SectionLabel(label: 'Transaction Alerts'),
+              _SectionLabel(label: AppStrings.transactionAlerts),
               _SettingsTile(
                 icon: LucideIcons.circleDollarSign,
                 iconColor: Colors.blue,
-                title: 'New Transaction',
-                subtitle:
-                'Get notified when you add an expense or income',
+                title: AppStrings.newTransaction,
+                subtitle: AppStrings.newTransactionSubtitle,
                 value: _settings.transactionAdded,
                 onChanged: (val) => _update(
                     _settings.copyWith(transactionAdded: val)),
@@ -69,9 +69,8 @@ class _NotificationSettingsScreenState
               _SettingsTile(
                 icon: LucideIcons.alertTriangle,
                 iconColor: Colors.orange,
-                title: 'Budget Warnings',
-                subtitle:
-                'Alert when a category reaches 80% or 100% of its limit',
+                title: AppStrings.budgetWarnings,
+                subtitle: AppStrings.budgetWarningsSubtitle,
                 value: _settings.budgetWarnings,
                 onChanged: (val) =>
                     _update(_settings.copyWith(budgetWarnings: val)),
@@ -80,9 +79,8 @@ class _NotificationSettingsScreenState
               _SettingsTile(
                 icon: LucideIcons.trendingDown,
                 iconColor: Colors.red,
-                title: 'Low Balance Alert',
-                subtitle:
-                'Alert when your balance drops below your threshold',
+                title: AppStrings.lowBalanceAlert,
+                subtitle: AppStrings.lowBalanceSubtitle,
                 value: _settings.lowBalance,
                 onChanged: (val) =>
                     _update(_settings.copyWith(lowBalance: val)),
@@ -96,12 +94,12 @@ class _NotificationSettingsScreenState
                 ),
               ],
               const SizedBox(height: 24),
-              _SectionLabel(label: 'Summaries'),
+              _SectionLabel(label: AppStrings.summaries),
               _SettingsTile(
                 icon: LucideIcons.calendarDays,
                 iconColor: Colors.purple,
-                title: 'Weekly Summary',
-                subtitle: 'A weekly snapshot of your income and expenses',
+                title: AppStrings.weeklySummary,
+                subtitle: AppStrings.weeklySummarySubtitle,
                 value: _settings.weeklySummary,
                 onChanged: (val) =>
                     _update(_settings.copyWith(weeklySummary: val)),
@@ -110,8 +108,8 @@ class _NotificationSettingsScreenState
               _SettingsTile(
                 icon: LucideIcons.barChart2,
                 iconColor: Colors.teal,
-                title: 'Monthly Summary',
-                subtitle: 'A monthly report of your cash flow',
+                title: AppStrings.monthlySummary,
+                subtitle: AppStrings.monthlySummarySubtitle,
                 value: _settings.monthlySummary,
                 onChanged: (val) =>
                     _update(_settings.copyWith(monthlySummary: val)),
@@ -131,7 +129,7 @@ class _NotificationSettingsScreenState
                     ),
                   ),
                   child: const Text(
-                    'Save Settings',
+                    AppStrings.saveSettings,
                     style: TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w600),
                   ),
@@ -154,7 +152,7 @@ class _NotificationSettingsScreenState
         .saveSettings(_userId, _settings);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Settings saved'),
+        content: Text(AppStrings.settingsSaved),
         backgroundColor: Colors.green,
       ),
     );
@@ -269,7 +267,7 @@ class _ThresholdSlider extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Low Balance Threshold',
+              const Text(AppStrings.lowBalanceThreshold,
                   style: TextStyle(
                       fontWeight: FontWeight.w600, fontSize: 14)),
               Text(

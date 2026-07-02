@@ -1,4 +1,6 @@
 // core/di/injection_container.dart
+import 'package:budgeto/core/local_storage/hive_service.dart';
+import 'package:budgeto/core/notifications/notification_manager.dart';
 import 'package:budgeto/core/services/notification_service.dart';
 import 'package:budgeto/core/services/pdf_export_service.dart';
 import 'package:get_it/get_it.dart';
@@ -40,8 +42,15 @@ Future<void> init() async {
   sl.registerFactory(() => ExportCubit(exportService: sl()));
 
   // ── Services ──────────────────────────────────────────────────────────────
-  sl.registerLazySingleton(() => NotificationService(repository: sl()));
+  sl.registerLazySingleton(
+      () => NotificationManager(firestoreDataSource: sl()));
+  sl.registerLazySingleton(() => NotificationService(
+    repository: sl(),
+    notificationManager: sl(),
+    transactionRepository: sl(),
+  ));
   sl.registerLazySingleton(() => PdfExportService());
+  sl.registerLazySingleton(() => HiveService());
 
   // ── Repositories ──────────────────────────────────────────────────────────
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
